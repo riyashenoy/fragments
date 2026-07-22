@@ -1,0 +1,88 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  MetaPassthroughSource.cs
+//
+//  This is the ONLY file that references the Meta SDK. It's shipped as a .txt so
+//  the rest of the project compiles on a blank Unity project with no SDK installed.
+//
+//  TO ENABLE:
+//   1. Install Meta XR Core SDK + Meta MR Utility Kit (MRUK) v81+ via UPM / the
+//      Meta Quest build profile (Unity 6.x). Requires Horizon OS v81+, Quest 3/3S.
+//   2. Rename this file to  MetaPassthroughSource.cs
+//   3. Add the manifest permission (see README) and grant it at runtime.
+//   4. Drop this component on a GameObject and wire it into PassthroughCapture's
+//      `passthroughSourceBehaviour` field.
+//
+//  Verify these three API members against the exact MRUK version you install — Meta
+//  has renamed camera-pose/intrinsics helpers between releases. The shape below
+//  matches the PassthroughCameraAccess component + PassthroughCameraUtils sample as
+//  of MRUK v81–v83. If a name differs, the compiler will point you straight at it;
+//  the surrounding logic doesn't change.
+// ─────────────────────────────────────────────────────────────────────────────
+#if FOUND_META_SDK
+using UnityEngine;
+using Meta.XR;                 // PassthroughCameraAccess lives here in MRUK v81+
+using Found.Capture;
+
+namespace Found.Meta
+{
+    public class MetaPassthroughSource : MonoBehaviour, IPassthroughSource
+    {
+        [SerializeField] PassthroughCameraAccess.CameraPositionType camera =
+            PassthroughCameraAccess.CameraPositionType.Left;
+        [SerializeField] Vector2Int requestedResolution = new(1280, 960);
+
+        PassthroughCameraAccess _access;
+        Texture _tex;
+
+        void Awake()
+        {
+            _access = gameObject.AddComponent<PassthroughCameraAccess>();
+            _access.CameraPosition = camera;
+            _access.RequestedResolution = requestedResolution;   // pick a TESTED resolution, never "largest"
+        }
+
+        public bool IsReady => _access != null && _access.GetTexture() != null;
+
+        public Texture CurrentTexture
+        {
+            get { _tex = _access != null ? _access.GetTexture() : null; return _tex; }
+        }
+
+        public Vector2Int Resolution => requestedResolution;
+
+        // World camera pose for the CURRENT frame. PassthroughCameraUtils in the sample
+        // exposes GetCameraPoseInWorld(cameraId); the component may expose it directly.
+        public Pose CameraPose
+        {
+            get
+            {
+                // return _access.GetCameraPoseInWorld();   // <- confirm exact name in your version
+                var t = transform;                          // safe fallback: rig anchor
+                return new Pose(t.position, t.rotation);
+            }
+        }
+
+        // Project a world point into the camera texture using intrinsics. The sample's
+        // PassthroughCameraUtils.WorldToScreenPoint(...) does this; adapt as needed.
+        public bool WorldToCameraUV(Vector3 worldPoint, out Vector2 uv)
+        {
+            uv = default;
+            if (_access == null) return false;
+
+            // --- Preferred: use the SDK helper (recommended, handles distortion) -------
+            // if (PassthroughCameraUtils.WorldToScreenPoint(camId, worldPoint, out var px)) {
+            //     uv = new Vector2(px.x / Resolution.x, px.y / Resolution.y);
+            //     return uv.x is >= 0 and <= 1 && uv.y is >= 0 and <= 1;
+            // }
+
+            // --- Fallback: project through a Unity camera co-located with the RGB cam ---
+            var cam = Camera.main;
+            if (cam == null) return false;
+            Vector3 vp = cam.WorldToViewportPoint(worldPoint);
+            if (vp.z <= 0f) return false;
+            uv = new Vector2(vp.x, vp.y);
+            return uv.x is >= 0f and <= 1f && uv.y is >= 0f and <= 1f;
+        }
+    }
+}
+#endif
