@@ -952,7 +952,7 @@ GameObject:
   - component: {fileID: 484520004}
   - component: {fileID: 484520003}
   m_Layer: 0
-  m_Name: Button (1)
+  m_Name: color2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1105,7 +1105,7 @@ GameObject:
   - component: {fileID: 641975918}
   - component: {fileID: 641975917}
   m_Layer: 5
-  m_Name: Button
+  m_Name: ReadyButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1378,7 +1378,7 @@ GameObject:
   - component: {fileID: 697247913}
   - component: {fileID: 697247912}
   m_Layer: 0
-  m_Name: Button (7)
+  m_Name: Striped
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1636,7 +1636,7 @@ GameObject:
   - component: {fileID: 780647153}
   - component: {fileID: 780647152}
   m_Layer: 0
-  m_Name: Button (3)
+  m_Name: color4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2162,7 +2162,7 @@ GameObject:
   - component: {fileID: 1546554224}
   - component: {fileID: 1546554223}
   m_Layer: 0
-  m_Name: Button (5)
+  m_Name: Plain
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2557,7 +2557,7 @@ GameObject:
   - component: {fileID: 1639575373}
   - component: {fileID: 1639575372}
   m_Layer: 0
-  m_Name: Button
+  m_Name: color1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2836,7 +2836,7 @@ GameObject:
   - component: {fileID: 1741530351}
   - component: {fileID: 1741530350}
   m_Layer: 0
-  m_Name: Button (6)
+  m_Name: Dotted
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2944,6 +2944,74 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1741530348}
   m_CullTransparentMesh: 1
+--- !u!1001 &1776586076
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3342236904198655340, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_Name
+      value: Navigation
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -377.7754
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -100.00001
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6870627304092880771, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+--- !u!114 &1776586077 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4198517969276278480, guid: 731fdf44af6dd15439ef8b1d591b7206, type: 3}
+  m_PrefabInstance: {fileID: 1776586076}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc377e7f78490e64fb81ad099252c1ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Fragments.UI.SceneNavigator
 --- !u!1 &1780996429
 GameObject:
   m_ObjectHideFlags: 0
@@ -2957,7 +3025,7 @@ GameObject:
   - component: {fileID: 1780996432}
   - component: {fileID: 1780996431}
   m_Layer: 0
-  m_Name: Button (2)
+  m_Name: color3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3618,6 +3686,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1914886555}
+  - component: {fileID: 1914886556}
   m_Layer: 0
   m_Name: CreateJournalManager
   m_TagString: Untagged
@@ -3640,6 +3709,36 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1914886556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1914886554}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 161d23a1331168241b06832b0a229c7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Fragments.UI.CreateJournalManager
+  nameInput: {fileID: 394809927}
+  beginButton: {fileID: 641975917}
+  colorButtons:
+  - {fileID: 1639575372}
+  - {fileID: 484520003}
+  - {fileID: 1780996431}
+  - {fileID: 780647152}
+  colorHexValues:
+  - '#6B402A'
+  - '#7A3325'
+  - '#5C6039'
+  - '#EFE3C8'
+  plainButton: {fileID: 1546554223}
+  dottedButton: {fileID: 1741530350}
+  stripedButton: {fileID: 697247912}
+  sceneNavigator: {fileID: 1776586077}
+  selectedOutlineColor: {r: 0.91, g: 0.71, b: 0.3, a: 1}
+  unselectedOutlineColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
 --- !u!1 &2078096991
 GameObject:
   m_ObjectHideFlags: 0
@@ -3786,3 +3885,4 @@ SceneRoots:
   - {fileID: 1075580423}
   - {fileID: 431753657}
   - {fileID: 1914886555}
+  - {fileID: 1776586076}
