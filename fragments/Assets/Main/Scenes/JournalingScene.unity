@@ -280,7 +280,7 @@ MonoBehaviour:
   subdivisionsX: 16
   subdivisionsZ: 6
   paperNoise: 0.0012
-  buildOnStart: 1
+  buildOnStart: 0
 --- !u!4 &198840637
 Transform:
   m_ObjectHideFlags: 0
@@ -1396,6 +1396,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 2108853425}
+        m_TargetAssemblyTypeName: Fragments.UI.JournalingSceneManager, Assembly-CSharp
+        m_MethodName: GoBack
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1634636680
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1842,8 +1854,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 226961fe378a15a40bb598e0898bfe39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Fragments.UI.JournalingSceneManager
-  journalNameText: {fileID: 205392472}
-  coverColorPreview: {fileID: 1270456764}
+  journalBuilder: {fileID: 198840636}
+  bookUIController: {fileID: 1566291588}
+  pagePlain: {fileID: 2100000, guid: 44e86c900974de54cb700e06d1da65c2, type: 2}
+  pageDotted: {fileID: 2100000, guid: 87142caadc8b89d4dae9147cab9ba5ec, type: 2}
+  pageStriped: {fileID: 2100000, guid: 6de249df778bd6f47827c66246ab752d, type: 2}
   sceneNavigator: {fileID: 1575625408}
 --- !u!4 &2108853426
 Transform:
