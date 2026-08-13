@@ -1912,6 +1912,8 @@ MonoBehaviour:
   pageStriped: {fileID: 2100000, guid: 6de249df778bd6f47827c66246ab752d, type: 2}
   pageEdge: {fileID: 2100000, guid: ca461c07187aabf4196b25d02cf55e16, type: 2}
   coverBaseMaterial: {fileID: 2100000, guid: 5e76aadc8a3eb63458dc18d802c5a69c, type: 2}
+  journalNameText: {fileID: 205392472}
+  coverColorPreview: {fileID: 1270456764}
   sceneNavigator: {fileID: 1575625408}
 --- !u!4 &2108853426
 Transform:

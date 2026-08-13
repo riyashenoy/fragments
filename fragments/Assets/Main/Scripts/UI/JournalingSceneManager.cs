@@ -26,11 +26,15 @@ namespace Fragments.UI
         public Material pageDotted;
         public Material pageStriped;
 
-        [Header("Edge Material (the cream paper edge)")]
+        [Header("Edge Material")]
         public Material pageEdge;
 
         [Header("Cover Material (base — gets tinted at runtime)")]
         public Material coverBaseMaterial;
+
+        [Header("Debug Display (temporary — remove later)")]
+        public TMP_Text journalNameText;
+        public Image coverColorPreview;
 
         [Header("Navigation")]
         public SceneNavigator sceneNavigator;
@@ -60,6 +64,7 @@ namespace Fragments.UI
             JournalStore.Save(_data);
 
             SpawnAndStyleBook();
+            UpdateDebugDisplay();
 
             Debug.Log("[Fragments] Loaded: " + _data.journalName +
                       " | Cover: " + _data.coverColorHex +
@@ -74,30 +79,35 @@ namespace Fragments.UI
                 return;
             }
 
-            // Spawn the prefab
-            Vector3 spawnPos = bookSpawnPoint != null ? bookSpawnPoint.position : new Vector3(0f, -0.15f, 0.4f);
-            Quaternion spawnRot = bookSpawnPoint != null ? bookSpawnPoint.rotation : Quaternion.Euler(30f, 0f, 0f);
+            // Spawn the prefab at the spawn point
+            Vector3 spawnPos = bookSpawnPoint != null
+                ? bookSpawnPoint.position
+                : new Vector3(0f, -0.15f, 0.4f);
+            Quaternion spawnRot = bookSpawnPoint != null
+                ? bookSpawnPoint.rotation
+                : Quaternion.Euler(30f, 0f, 0f);
 
             GameObject bookObj = Instantiate(journalPrefab, spawnPos, spawnRot);
-            _journal = bookObj.GetComponent<Journal>();
 
-            if (_journal == null)
+            // Get the builder so we can set materials and rebuild at runtime
+            JournalBuilder builder = bookObj.GetComponent<JournalBuilder>();
+
+            if (builder == null)
             {
-                Debug.LogError("[Fragments] Journal prefab is missing a Journal component!");
+                Debug.LogError("[Fragments] Journal prefab has no JournalBuilder component!");
                 return;
             }
 
-            // Apply cover color
+            // Set cover color — create a runtime copy so we don't modify the asset
             if (coverBaseMaterial != null &&
                 ColorUtility.TryParseHtmlString(_data.coverColorHex, out Color coverCol))
             {
-                // Runtime copy so we don't modify the asset
                 Material coverInstance = new Material(coverBaseMaterial);
                 coverInstance.color = coverCol;
-                _journal.SetShellMaterial(coverInstance);
+                builder.shellMaterial = coverInstance;
             }
 
-            // Apply page pattern
+            // Set page pattern
             Material pageMat = _data.pagePattern switch
             {
                 "dotted" => pageDotted,
@@ -105,11 +115,40 @@ namespace Fragments.UI
                 _ => pagePlain
             };
             if (pageMat != null)
-                _journal.SetPageMaterial(pageMat);
+                builder.pageMaterial = pageMat;
 
-            // Wire book UI controller
+            // Set edge material
+            if (pageEdge != null)
+                builder.edgeMaterial = pageEdge;
+
+            // Rebuild at runtime — this regenerates all meshes and initializes
+            // the runtime state (curl data, physics joints) that doesn't survive
+            // prefab serialization. The prefab still controls positioning and
+            // dimensions; we just refresh the internals.
+            builder.Build();
+
+            // Now grab the fresh Journal component (Build() recreates it)
+            _journal = bookObj.GetComponent<Journal>();
+
+            if (_journal == null)
+            {
+                Debug.LogError("[Fragments] Journal component missing after Build!");
+                return;
+            }
+
+            // Wire the book UI controller
             if (bookUIController != null)
                 bookUIController.journal = _journal;
+        }
+
+        void UpdateDebugDisplay()
+        {
+            if (journalNameText != null)
+                journalNameText.text = _data.journalName;
+
+            if (coverColorPreview != null &&
+                ColorUtility.TryParseHtmlString(_data.coverColorHex, out Color col))
+                coverColorPreview.color = col;
         }
 
         public void GoBack()
