@@ -12,8 +12,13 @@ namespace Fragments.UI
 {
     public class JournalingSceneManager : MonoBehaviour
     {
-        [Header("Journal")]
-        public JournalBuilder journalBuilder;
+        [Header("Journal Prefab (drag your saved book prefab here)")]
+        public GameObject journalPrefab;
+
+        [Header("Where to spawn the book in the scene")]
+        public Transform bookSpawnPoint;
+
+        [Header("Book UI")]
         public BookUIController bookUIController;
 
         [Header("Page Pattern Materials (assign all 3)")]
@@ -21,10 +26,17 @@ namespace Fragments.UI
         public Material pageDotted;
         public Material pageStriped;
 
+        [Header("Edge Material (the cream paper edge)")]
+        public Material pageEdge;
+
+        [Header("Cover Material (base — gets tinted at runtime)")]
+        public Material coverBaseMaterial;
+
         [Header("Navigation")]
         public SceneNavigator sceneNavigator;
 
         JournalData _data;
+        Journal _journal;
 
         void Start()
         {
@@ -39,39 +51,53 @@ namespace Fragments.UI
 
             if (_data == null)
             {
-                Debug.LogError("[Fragments] Journal not found on disk — returning to library.");
+                Debug.LogError("[Fragments] Journal not found — returning to library.");
                 sceneNavigator.LoadLibrary();
                 return;
             }
 
-            // Update last opened time
             _data.lastOpenedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             JournalStore.Save(_data);
 
-            // Style and build the book
-            BuildJournal();
+            SpawnAndStyleBook();
 
-            Debug.Log($"[Fragments] Loaded: {_data.journalName} | Cover: {_data.coverColorHex} | Pattern: {_data.pagePattern}");
+            Debug.Log("[Fragments] Loaded: " + _data.journalName +
+                      " | Cover: " + _data.coverColorHex +
+                      " | Pattern: " + _data.pagePattern);
         }
 
-        void BuildJournal()
+        void SpawnAndStyleBook()
         {
-            if (journalBuilder == null)
+            if (journalPrefab == null)
             {
-                Debug.LogError("[Fragments] JournalBuilder not assigned!");
+                Debug.LogError("[Fragments] No journal prefab assigned!");
                 return;
             }
 
-            // Set cover color
-            if (journalBuilder.shellMaterial != null &&
-                ColorUtility.TryParseHtmlString(_data.coverColorHex, out Color coverCol))
+            // Spawn the prefab
+            Vector3 spawnPos = bookSpawnPoint != null ? bookSpawnPoint.position : new Vector3(0f, -0.15f, 0.4f);
+            Quaternion spawnRot = bookSpawnPoint != null ? bookSpawnPoint.rotation : Quaternion.Euler(30f, 0f, 0f);
+
+            GameObject bookObj = Instantiate(journalPrefab, spawnPos, spawnRot);
+            _journal = bookObj.GetComponent<Journal>();
+
+            if (_journal == null)
             {
-                // Create a runtime copy so we don't permanently modify the asset
-                journalBuilder.shellMaterial = new Material(journalBuilder.shellMaterial);
-                journalBuilder.shellMaterial.color = coverCol;
+                Debug.LogError("[Fragments] Journal prefab is missing a Journal component!");
+                return;
             }
 
-            // Set page pattern
+            // Apply cover color
+            if (coverBaseMaterial != null &&
+                ColorUtility.TryParseHtmlString(_data.coverColorHex, out Color coverCol))
+            {
+                // Runtime copy so we don't modify the asset
+                Material coverInstance = new Material(coverBaseMaterial);
+                coverInstance.color = coverCol;
+                _journal.SetShellMaterial(coverInstance);
+            }
+
+            // Apply page pattern
             Material pageMat = _data.pagePattern switch
             {
                 "dotted" => pageDotted,
@@ -79,15 +105,11 @@ namespace Fragments.UI
                 _ => pagePlain
             };
             if (pageMat != null)
-                journalBuilder.pageMaterial = pageMat;
+                _journal.SetPageMaterial(pageMat);
 
-            // Build the book
-            journalBuilder.Build();
-
-            // Wire the book UI controller to the newly created Journal component
-            Journal journal = journalBuilder.GetComponent<Journal>();
-            if (bookUIController != null && journal != null)
-                bookUIController.journal = journal;
+            // Wire book UI controller
+            if (bookUIController != null)
+                bookUIController.journal = _journal;
         }
 
         public void GoBack()

@@ -1,26 +1,26 @@
 using System.Collections;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace Found.Journal3D
 {
-    /// <summary>
-    /// One leaf of the journal (front cover or a page). It pivots about the spine (local
-    /// Z axis at X=0), animates its turn with easing, and bows the paper mid-turn for a
-    /// believable page curl. Front and back each get their own material slot, and each
-    /// face exposes a decoration surface transform that scraps/drawings parent to — so
-    /// decorations turn with the page and stay attached, exactly like the web prototype.
-    /// </summary>
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
     public class JournalPage : MonoBehaviour
     {
         [Header("State")]
-        public bool turned;              // false = resting on the right, true = flipped to the left
-        [Tooltip("Covers stay rigid (no paper bow). Pages curl during the turn.")]
+        public bool turned;
+        [Tooltip("Covers stay rigid (no paper curl during flip).")]
         public bool rigid;
 
-        [Header("Curl")]
-        public float curlAmplitude = 0.012f;   // metres of bow at mid-turn
-        public float curlShapePower = 1.6f;    // higher = curl concentrated near the free edge
+        [Header("Curl (during animated flips)")]
+        public float curlAmplitude = 0.018f;
+        public float curlShapePower = 1.4f;
+        public float edgeFlick = 0.6f;
+
+        [Header("Physics")]
+        public float hingeDamping = 0.8f;
+        public float hingeSpring = 2f;
+        public bool useGravity = true;
 
         public Transform FrontSurface { get; private set; }
         public Transform BackSurface { get; private set; }
@@ -31,31 +31,78 @@ namespace Found.Journal3D
         Vector3[] _base;
         Vector3[] _work;
         float _width;
-        float _angle;                    // current turn angle in degrees (0..180)
+        float _thickness;
+        float _angle;
+        Rigidbody _rb;
+        HingeJoint _hinge;
 
-        static readonly Vector3 Hinge = Vector3.forward;   // spine runs along local Z
+        static readonly Vector3 HingeAxis = Vector3.forward;
 
-        public void Initialize(PageMeshBuilder.Result r, Material front, Material back)
+        public void Initialize(PageMeshBuilder.Result r, Material front, Material back, Material edge)
         {
             _mf = GetComponent<MeshFilter>();
             _mesh = r.mesh;
             _base = r.baseVertices;
             _work = (Vector3[])_base.Clone();
             _width = r.width;
+            _thickness = r.thickness;
             _mf.sharedMesh = _mesh;
 
             var mr = GetComponent<MeshRenderer>();
-            mr.sharedMaterials = new[] { front, back };
+            mr.sharedMaterials = new[] { front, back, edge };
 
-            // Decoration anchors: front sits just above the sheet, back just below,
-            // both centred on the page, so parented items rest on the paper.
-            FrontSurface = MakeSurface("FrontSurface", +0.0015f);
-            BackSurface  = MakeSurface("BackSurface", -0.0015f);
-            BackSurface.localRotation = Quaternion.Euler(0f, 180f, 0f); // face outward when flipped
+            FrontSurface = MakeSurface("FrontSurface", _thickness * 0.5f + 0.001f);
+            BackSurface = MakeSurface("BackSurface", -_thickness * 0.5f - 0.001f);
+            BackSurface.localRotation = Quaternion.Euler(0f, 180f, 0f);
 
             _angle = turned ? 180f : 0f;
-            transform.localRotation = Quaternion.AngleAxis(_angle, Hinge);
+            transform.localRotation = Quaternion.AngleAxis(_angle, HingeAxis);
             ApplyCurl(0f);
+        }
+
+        public void SetupPhysics(Rigidbody bookBody)
+        {
+            if (!useGravity) return;
+
+            _rb = gameObject.GetComponent<Rigidbody>();
+            if (_rb == null) _rb = gameObject.AddComponent<Rigidbody>();
+            _rb.mass = rigid ? 0.3f : 0.05f;
+            _rb.linearDamping = 0.5f;
+            _rb.angularDamping = hingeDamping;
+            _rb.useGravity = true;
+            _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            _rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+            _hinge = gameObject.GetComponent<HingeJoint>();
+            if (_hinge == null) _hinge = gameObject.AddComponent<HingeJoint>();
+            _hinge.connectedBody = bookBody;
+            _hinge.axis = Vector3.forward;
+            _hinge.anchor = Vector3.zero;
+
+            _hinge.useLimits = true;
+            var limits = new JointLimits();
+            limits.min = 0f;
+            limits.max = 180f;
+            limits.bounciness = 0.05f;
+            limits.contactDistance = 2f;
+            _hinge.limits = limits;
+
+            _hinge.useSpring = true;
+            var spring = new JointSpring();
+            spring.spring = hingeSpring;
+            spring.damper = hingeDamping;
+            spring.targetPosition = turned ? 180f : 0f;
+            _hinge.spring = spring;
+
+            _rb.isKinematic = false;
+        }
+
+        void UpdateSpringTarget(float targetAngle)
+        {
+            if (_hinge == null || !_hinge.useSpring) return;
+            var spring = _hinge.spring;
+            spring.targetPosition = targetAngle;
+            _hinge.spring = spring;
         }
 
         Transform MakeSurface(string n, float yOffset)
@@ -67,40 +114,53 @@ namespace Found.Journal3D
             return t;
         }
 
-        public void SetMaterials(Material front, Material back)
+        public void SetMaterials(Material front, Material back, Material edge)
         {
             var mr = GetComponent<MeshRenderer>();
-            mr.sharedMaterials = new[] { front, back };
+            mr.sharedMaterials = new[] { front, back, edge };
         }
 
-        /// <summary>Animate a turn. forward=true flips right→left, false flips back.</summary>
         public IEnumerator Turn(bool forward, float duration, AnimationCurve ease)
         {
             IsAnimating = true;
-            float from = _angle;
+            if (_rb != null) _rb.isKinematic = true;
+
+            float from = GetCurrentAngle();
             float to = forward ? 180f : 0f;
             float t = 0f;
+
             while (t < duration)
             {
                 t += Time.deltaTime;
-                float k = ease != null ? ease.Evaluate(Mathf.Clamp01(t / duration)) : Mathf.Clamp01(t / duration);
+                float k = ease != null
+                    ? ease.Evaluate(Mathf.Clamp01(t / duration))
+                    : Mathf.Clamp01(t / duration);
                 _angle = Mathf.LerpAngle(from, to, k);
-                transform.localRotation = Quaternion.AngleAxis(_angle, Hinge);
+                transform.localRotation = Quaternion.AngleAxis(_angle, HingeAxis);
                 ApplyCurl(CurlFactor(_angle));
                 yield return null;
             }
+
             _angle = to;
-            transform.localRotation = Quaternion.AngleAxis(_angle, Hinge);
+            transform.localRotation = Quaternion.AngleAxis(_angle, HingeAxis);
             ApplyCurl(0f);
             turned = forward;
+
+            UpdateSpringTarget(to);
+            if (_rb != null)
+            {
+                _rb.isKinematic = false;
+                _rb.linearVelocity = Vector3.zero;
+                _rb.angularVelocity = Vector3.zero;
+            }
             IsAnimating = false;
         }
 
-        /// <summary>Drive the turn directly from a 0..1 drag (for grab-to-flip).</summary>
         public void SetProgress(float p01)
         {
+            if (_rb != null && !_rb.isKinematic) _rb.isKinematic = true;
             _angle = Mathf.Clamp01(p01) * 180f;
-            transform.localRotation = Quaternion.AngleAxis(_angle, Hinge);
+            transform.localRotation = Quaternion.AngleAxis(_angle, HingeAxis);
             ApplyCurl(CurlFactor(_angle));
         }
 
@@ -108,20 +168,35 @@ namespace Found.Journal3D
         {
             turned = flipped;
             _angle = flipped ? 180f : 0f;
-            transform.localRotation = Quaternion.AngleAxis(_angle, Hinge);
+            transform.localRotation = Quaternion.AngleAxis(_angle, HingeAxis);
             ApplyCurl(0f);
+            UpdateSpringTarget(_angle);
+            if (_rb != null)
+            {
+                _rb.isKinematic = false;
+                _rb.linearVelocity = Vector3.zero;
+                _rb.angularVelocity = Vector3.zero;
+            }
         }
 
-        public float Progress => _angle / 180f;
+        public float Progress => GetCurrentAngle() / 180f;
+
+        float GetCurrentAngle()
+        {
+            float angle = transform.localRotation.eulerAngles.z;
+            if (angle > 180f) angle -= 360f;
+            return Mathf.Clamp(angle, 0f, 180f);
+        }
 
         float CurlFactor(float angleDeg)
         {
             if (rigid) return 0f;
-            return Mathf.Sin(angleDeg / 180f * Mathf.PI); // 0 at flat, peak at 90°
+            return Mathf.Sin(angleDeg / 180f * Mathf.PI);
         }
 
         void ApplyCurl(float factor)
         {
+            if (_base == null || _mesh == null) return;
             if (rigid || factor <= 0.0001f)
             {
                 _mesh.vertices = _base;
@@ -133,9 +208,10 @@ namespace Found.Journal3D
             {
                 var p = _base[i];
                 float u = Mathf.Clamp01(p.x / _width);
-                float bow = Mathf.Pow(u, curlShapePower);         // ramps toward free edge
-                float tip = Mathf.Pow(u, 4f) * 0.4f;              // slight extra flick at the very edge
-                _work[i] = new Vector3(p.x, p.y + curlAmplitude * factor * (bow + tip), p.z);
+                float bow = Mathf.Pow(u, curlShapePower);
+                float tip = Mathf.Pow(u, 5f) * edgeFlick;
+                float sCurve = Mathf.Sin(u * Mathf.PI) * 0.3f;
+                _work[i] = new Vector3(p.x, p.y + curlAmplitude * factor * (bow + tip + sCurve), p.z);
             }
             _mesh.vertices = _work;
             _mesh.RecalculateNormals();
