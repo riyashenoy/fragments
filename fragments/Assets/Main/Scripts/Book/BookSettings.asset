@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b0ad994063e08847b8ad1a5b47b3d5b, type: 3}
+  m_Name: BookSettings
+  m_EditorClassIdentifier: Assembly-CSharp::Fragments.Book.BookSettings
+  pageWidth: 0.15
+  pageHeight: 0.21
+  paperThickness: 0.0005
+  sheetCount: 8
+  coverOverhang: 0.005
+  coverThickness: 0.002
+  cornerRadius: 0.007
+  binding: 0
+  spineBulge: 0.55
+  spineFlatWhenOpen: 0.35
+  hingeGap: 0.0015
+  coverPageClearance: 0.0035
+  holeInset: 0.0085
+  holeRadius: 0.0038
+  holeCount: 9
+  ringSize: 1
+  ringShift: 0
+  wireRadius: 0.0006
+  stapleSize: 1
+  stapleCount: 3
+  stapleSpacing: 0.55
+  turnCurlRadius: 0.016
+  restCurlRadius: 0.0015
+  sag: 0.16
+  paperSpeed: 120
+  irregularity: 0.4
+  paperNoise: 0.00015
+  coverStiffness: 0.55
+  coverSpeed: 55
+  damping: 1.1
+  convergeTime: 0.16
+  spansX: 40
+  spansZ: 14

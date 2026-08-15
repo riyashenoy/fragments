@@ -60,8 +60,8 @@ namespace Fragments.Book
             switch (s.binding)
             {
                 case BindingType.Hardcover: BuildSpine(); BuildBackBoard(false); break;
-                case BindingType.Rings:     BuildRings(); BuildBackBoard(true);  break;
-                case BindingType.Staples:   BuildSpine(); BuildBackBoard(false); BuildStaples(); break;
+                case BindingType.Rings: BuildRings(); BuildBackBoard(true); break;
+                case BindingType.Staples: BuildSpine(); BuildBackBoard(false); BuildStaples(); break;
             }
 
             // --- sheets: index 0 is the cover, then pages ---
@@ -101,13 +101,17 @@ namespace Fragments.Book
 
             var gen = SheetMeshGenerator.Generate(new SheetMeshGenerator.Params
             {
-                width = w, height = h, thickness = t,
+                width = w,
+                height = h,
+                thickness = t,
                 spansX = isCover ? 44 : s.spansX,
                 spansZ = isCover ? 20 : s.spansZ,
                 cornerRadius = isCover ? s.cornerRadius : 0f,
                 noise = isCover ? 0f : s.paperNoise,
                 seed = i,
-                holeZ = holes, holeX = s.holeInset, holeRadius = s.holeRadius
+                holeZ = holes,
+                holeX = s.holeInset,
+                holeRadius = s.holeRadius
             });
 
             var pivot = new GameObject(kind == SheetKind.Page ? $"Sheet_{i}" : "Cover").transform;
@@ -152,10 +156,16 @@ namespace Fragments.Book
             var s = settings;
             var gen = SheetMeshGenerator.Generate(new SheetMeshGenerator.Params
             {
-                width = s.CoverWidth, height = s.CoverHeight, thickness = s.coverThickness,
-                spansX = 44, spansZ = 20, cornerRadius = s.cornerRadius, seed = 99,
+                width = s.CoverWidth,
+                height = s.CoverHeight,
+                thickness = s.coverThickness,
+                spansX = 44,
+                spansZ = 20,
+                cornerRadius = s.cornerRadius,
+                seed = 99,
                 holeZ = punched ? s.HoleZ() : null,
-                holeX = s.holeInset, holeRadius = s.holeRadius
+                holeX = s.holeInset,
+                holeRadius = s.holeRadius
             });
             var go = new GameObject("BackBoard", typeof(MeshFilter), typeof(MeshRenderer));
             go.transform.SetParent(_bindingRoot, false);
