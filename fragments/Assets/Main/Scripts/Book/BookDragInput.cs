@@ -1,129 +1,145 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Debug = UnityEngine.Debug;
 
 namespace Fragments.Book
 {
     /// <summary>
-    /// Drag-to-peel input. Mouse on desktop; call BeginPeel/UpdatePeel/EndPeel
-    /// directly from an XR interactor with a world position and nothing else
-    /// needs to change.
-    ///
-    /// The grabbed point is derived from the raycast UV (material coordinates),
-    /// NOT from world position. A turned sheet's vertices already live at
-    /// negative x — there is no mirroring — so using UV is what makes backward
-    /// dragging behave identically to forward.
+    /// Handles mouse drag and XR hand input to control page turning with realistic peeling.
+    /// Casts rays to find the page, converts hits to material coordinates, and drives deformation.
     /// </summary>
     public class BookDragInput : MonoBehaviour
     {
-        public Book book;
-        public Camera inputCamera;
-        [Tooltip("Fraction of the page width, measured from the outer edge, that can be grabbed.")]
-        [Range(0.1f, 0.6f)] public float grabBand = 0.34f;
+        [SerializeField] private Book book;
+        [SerializeField] private Camera mainCamera;
+        [SerializeField] private LayerMask pageLayer = -1; // Set this to catch page meshes
 
-        BookSheet _held;
-        int _heldDir = 1;
+        private BookSheet activeDrag;
+        private Vector2 dragMaterialPoint;
 
-        void Awake() { if (inputCamera == null) inputCamera = Camera.main; }
-
-        void Update()
+        private void OnEnable()
         {
-            if (book == null || inputCamera == null) return;
-
-            if (Input.GetMouseButtonDown(0))
-            {
-                Ray r = inputCamera.ScreenPointToRay(Input.mousePosition);
-                TryBeginPeel(r);
-            }
-            else if (Input.GetMouseButton(0) && _held != null)
-            {
-                Ray r = inputCamera.ScreenPointToRay(Input.mousePosition);
-                if (PlaneHit(r, _held.StackY, out Vector3 wp)) _held.DragTo(wp);
-            }
-            else if (Input.GetMouseButtonUp(0) && _held != null)
-            {
-                EndPeel();
-            }
-
-            if (Input.GetKeyDown(KeyCode.RightArrow)) book.TurnForward();
-            if (Input.GetKeyDown(KeyCode.LeftArrow)) book.TurnBackward();
+            if (mainCamera == null)
+                mainCamera = Camera.main;
         }
 
-        bool PlaneHit(Ray ray, float y, out Vector3 point)
+        private void Update()
         {
-            var plane = new Plane(book.transform.up, book.transform.position + Vector3.up * y);
-            if (plane.Raycast(ray, out float d)) { point = ray.GetPoint(d); return true; }
-            point = default; return false;
+            Vector2 mousePos = Mouse.current.position.ReadValue();
+
+            // Begin drag: raycast to find what we're hitting
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                TryBeginDrag(mousePos);
+            }
+
+            // Continue drag: update the target
+            if (activeDrag != null && Mouse.current.leftButton.isPressed)
+            {
+                UpdateDrag(mousePos);
+            }
+
+            // End drag: release
+            if (Mouse.current.leftButton.wasReleasedThisFrame && activeDrag != null)
+            {
+                EndDrag();
+            }
         }
 
-        public bool TryBeginPeel(Ray ray)
+        private void TryBeginDrag(Vector2 screenPos)
         {
-            if (book.Busy) return false;
+            if (book.Busy || book.NextSheet == null) return;
 
-            var cands = new System.Collections.Generic.List<BookSheet>();
-            if (book.NextSheet != null) cands.Add(book.NextSheet);
-            if (book.PrevSheet != null) cands.Add(book.PrevSheet);
-            if (cands.Count == 0) return false;
+            Ray ray = mainCamera.ScreenPointToRay(screenPos);
 
-            RaycastHit best = default; BookSheet hitSheet = null; float bestD = float.MaxValue;
-            foreach (var s in cands)
+            // Raycast to the next sheet (the one to be turned)
+            BookSheet target = book.NextSheet;
+            if (target == null) return;
+
+            // Check if we hit this sheet's mesh
+            MeshCollider mc = target.GetComponent<MeshCollider>();
+            if (mc == null)
             {
-                var mc = s.GetComponent<MeshCollider>();
-                if (mc == null)
+                // No collider � add temp one for raycasting
+                mc = target.gameObject.AddComponent<MeshCollider>();
+            }
+
+            if (Physics.Raycast(ray, out RaycastHit hit, 1000f, pageLayer == -1 ? LayerMask.GetMask("Default") : pageLayer))
+            {
+                if (hit.collider.GetComponent<BookSheet>() == target)
                 {
-                    mc = s.gameObject.AddComponent<MeshCollider>();
-                    mc.sharedMesh = s.GetComponent<MeshFilter>().sharedMesh;
+                    // Convert world hit to material (2D page) coordinates
+                    Vector3 localHit = target.transform.parent.InverseTransformPoint(hit.point);
+                    dragMaterialPoint = new Vector2(localHit.x, localHit.z);
+
+                    // Clamp to valid page bounds
+                    dragMaterialPoint.x = Mathf.Clamp(dragMaterialPoint.x, -target.width * 0.5f, target.width * 0.5f);
+                    dragMaterialPoint.y = Mathf.Clamp(dragMaterialPoint.y, -target.height * 0.5f, target.height * 0.5f);
+
+                    activeDrag = target;
+                    activeDrag.BeginDrag(dragMaterialPoint, hit.point);
                 }
-                if (mc.Raycast(ray, out RaycastHit h, 100f) && h.distance < bestD)
-                { bestD = h.distance; best = h; hitSheet = s; }
             }
-            if (hitSheet == null) return false;
-
-            // material coordinates from UV — correct regardless of current bend
-            bool isTop = best.triangleIndex * 3 < hitSheet.topTriangleCount;
-            float u = best.textureCoord.x;
-            if (!isTop) u = 1f - u;
-            var material = new Vector2(u * hitSheet.width,
-                                       (1f - best.textureCoord.y - 0.5f) * hitSheet.height);
-
-            if (!hitSheet.IsBoard && !InGrabZone(hitSheet, material)) return false;
-
-            _held = hitSheet;
-            _heldDir = (hitSheet == book.NextSheet) ? 1 : -1;
-            _held.BeginDrag(material, best.point);
-            return true;
         }
 
-        bool InGrabZone(BookSheet s, Vector2 m)
+        private void UpdateDrag(Vector2 screenPos)
         {
-            float band = s.width * grabBand;
-            if (m.x > s.width - band) return true;
-            float cr = Mathf.Min(s.width, s.height) * 0.32f;
-            return Vector2.Distance(m, new Vector2(s.width, s.height * 0.5f)) < cr
-                || Vector2.Distance(m, new Vector2(s.width, -s.height * 0.5f)) < cr;
+            if (activeDrag == null) return;
+
+            Ray ray = mainCamera.ScreenPointToRay(screenPos);
+
+            // Cast plane at the sheet's position
+            Plane dragPlane = new Plane(
+                mainCamera.transform.forward,
+                activeDrag.transform.parent.position
+            );
+
+            if (dragPlane.Raycast(ray, out float distance))
+            {
+                Vector3 worldPoint = ray.origin + ray.direction * distance;
+                activeDrag.DragTo(worldPoint);
+            }
         }
 
-        public void UpdatePeel(Vector3 worldPoint) { if (_held != null) _held.DragTo(worldPoint); }
+        private void EndDrag()
+        {
+            if (activeDrag == null) return;
+
+            // Release: sheet will animate to rest or completion
+            activeDrag = null;
+        }
+
+        /// <summary>
+        /// XR API: Hand tracking calls these directly.
+        /// BeginPeel: hand pinch down on the page
+        /// UpdatePeel: move hand while pinching
+        /// EndPeel: release pinch
+        /// </summary>
+        public void BeginPeel(Vector3 worldPosition)
+        {
+            if (book.Busy || book.NextSheet == null) return;
+
+            BookSheet target = book.NextSheet;
+
+            // Convert world position to material coordinates
+            Vector3 localHit = target.transform.parent.InverseTransformPoint(worldPosition);
+            dragMaterialPoint = new Vector2(localHit.x, localHit.z);
+            dragMaterialPoint.x = Mathf.Clamp(dragMaterialPoint.x, -target.width * 0.5f, target.width * 0.5f);
+            dragMaterialPoint.y = Mathf.Clamp(dragMaterialPoint.y, -target.height * 0.5f, target.height * 0.5f);
+
+            activeDrag = target;
+            activeDrag.BeginDrag(dragMaterialPoint, worldPosition);
+        }
+
+        public void UpdatePeel(Vector3 worldPosition)
+        {
+            if (activeDrag != null)
+                activeDrag.DragTo(worldPosition);
+        }
 
         public void EndPeel()
         {
-            if (_held == null) return;
-            var s = _held; int dir = _heldDir; _held = null;
-
-            int idx = book.Sheets.IndexOf(s);
-            bool past = s.PastMidpoint;
-
-            if (dir > 0)
-            {
-                if (past) s.StartAuto(true, book.StackY(idx, book.TurnedCount + 1));
-                else s.SettleTo(false, book.StackY(idx, book.TurnedCount));
-            }
-            else
-            {
-                if (!past) s.StartAuto(false, book.StackY(idx, book.TurnedCount - 1));
-                else s.SettleTo(true, book.StackY(idx, book.TurnedCount));
-            }
+            activeDrag = null;
         }
-
-        public bool IsPeeling => _held != null;
     }
 }

@@ -119,6 +119,75 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &22107212
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 22107215}
+  - component: {fileID: 22107214}
+  - component: {fileID: 22107213}
+  m_Layer: 0
+  m_Name: Journal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &22107213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 22107212}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 152c5ba8976416746a156036ca0292cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Fragments.Book.BookDragInput
+  book: {fileID: 22107214}
+  inputCamera: {fileID: 910673063}
+  grabBand: 0.34
+--- !u!114 &22107214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 22107212}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f013bc2365d0b84082c557d9d8a1a0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Fragments.Book.Book
+  settings: {fileID: 11400000, guid: 67d9913b6137f6e408487865a18201bc, type: 2}
+  coverMaterial: {fileID: 2100000, guid: 5e76aadc8a3eb63458dc18d802c5a69c, type: 2}
+  pageEdgeMaterial: {fileID: 2100000, guid: ca461c07187aabf4196b25d02cf55e16, type: 2}
+  metalMaterial: {fileID: 2100000, guid: 5826414262e4f144b81f9f98d5e40b7a, type: 2}
+  spineMaterial: {fileID: 2100000, guid: dec2429049f536848818328b817eab05, type: 2}
+  defaultPageMaterial: {fileID: 2100000, guid: 167900a7f80be614d901e151afc7cee9, type: 2}
+  onSpreadChanged:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!4 &22107215
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 22107212}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.6533554, y: -0.07621025, z: -0.0663654, w: 0.7502762}
+  m_LocalPosition: {x: -73, y: -94, z: 568.5}
+  m_LocalScale: {x: 890.4, y: 890.4, z: 890.4}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &188479497
 GameObject:
   m_ObjectHideFlags: 0
@@ -1078,7 +1147,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1318511404
 Transform:
   m_ObjectHideFlags: 0
@@ -1275,7 +1344,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1566291588
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1891,7 +1960,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2108853425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2063,3 +2132,4 @@ SceneRoots:
   - {fileID: 2108853426}
   - {fileID: 1566291589}
   - {fileID: 1318511404}
+  - {fileID: 22107215}
