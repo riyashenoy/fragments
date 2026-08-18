@@ -124,7 +124,8 @@ namespace Fragments.Book
         {
             if (IsBoard)
             {
-                float frac = Mathf.Clamp01((width - worldPoint.x) / (2f * width));
+                float span = Mathf.Max(0.02f, width);
+                float frac = Mathf.Clamp01((width - worldPoint.x) / (2f * span));
                 _angT = Mathf.PI * frac;
                 return;
             }

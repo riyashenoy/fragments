@@ -128,6 +128,10 @@ namespace Fragments.Book
                 front, back, isCover ? coverMaterial : pageEdgeMaterial,
                 pivot, go.transform);
 
+            var mc = go.AddComponent<MeshCollider>();
+            mc.sharedMesh = gen.mesh;
+            mc.convex = false;
+
             // subtle per-sheet irregularity so the stack isn't cloned rectangles
             if (kind == SheetKind.Page && s.irregularity > 0f)
             {

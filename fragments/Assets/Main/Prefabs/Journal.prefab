@@ -157,7 +157,6 @@ GameObject:
   - component: {fileID: 5208023019971344185}
   - component: {fileID: 2780135996324136216}
   - component: {fileID: 359658428719052790}
-  - component: {fileID: 8820921257089149685}
   m_Layer: 0
   m_Name: Journal
   m_TagString: Untagged
@@ -228,22 +227,6 @@ MonoBehaviour:
   pageLayer:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &8820921257089149685
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 952937833124483486}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4cc64eda2a626444fb3e3ab8c64fdd77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Fragments.Book.BookUIBridge
-  book: {fileID: 0}
-  coverImage: {fileID: 0}
-  pageIndicator: {fileID: 0}
-  colorButtons: []
 --- !u!1 &1018109937615722676
 GameObject:
   m_ObjectHideFlags: 0
