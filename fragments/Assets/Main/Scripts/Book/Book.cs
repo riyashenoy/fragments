@@ -32,6 +32,7 @@ namespace Fragments.Book
         [SerializeField] bool buildOnStart = true;
 
         public List<BookSheet> Sheets { get; private set; } = new();
+        public List<JournalPage> Pages { get; private set; } = new();
         public int TurnedCount { get; private set; }
         public float CoverTop { get; private set; }
 
@@ -47,6 +48,13 @@ namespace Fragments.Book
         [ContextMenu("Rebuild Book")]
         public void Build()
         {
+            for (int p = 0; p < Pages.Count; p++)
+            {
+                if (Pages[p]?.texture == null) continue;
+                if (Application.isPlaying) Destroy(Pages[p].texture);
+                else DestroyImmediate(Pages[p].texture);
+            }
+            Pages.Clear();
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 if (Application.isPlaying) Destroy(transform.GetChild(i).gameObject);
@@ -126,12 +134,37 @@ namespace Fragments.Book
             go.transform.SetParent(pivot, false);
 
             Material front = defaultPageMaterial, back = defaultPageMaterial;
-            if (isCover) { front = coverMaterial; back = coverMaterial; }
+            JournalPage frontPage = null, backPage = null;
+            if (isCover)
+            {
+                front = coverMaterial;
+                back = coverMaterial;
+            }
+            else
+            {
+                frontPage = new JournalPage(i * 2);
+                backPage = new JournalPage(i * 2 + 1);
+                Pages.Add(frontPage);
+                Pages.Add(backPage);
+                PageRenderer.Render(frontPage);
+                PageRenderer.Render(backPage);
+
+                front = new Material(defaultPageMaterial);
+                front.mainTexture = frontPage.texture;
+                back = new Material(defaultPageMaterial);
+                back.mainTexture = backPage.texture;
+            }
 
             var sheet = go.GetComponent<BookSheet>();
             sheet.Initialise(s, gen, kind, i, w, h,
                 front, back, isCover ? coverMaterial : pageEdgeMaterial,
                 pivot, go.transform);
+
+            if (kind == SheetKind.Page)
+            {
+                sheet.FrontPage = frontPage;
+                sheet.BackPage = backPage;
+            }
 
             var mc = go.AddComponent<MeshCollider>();
             mc.convex = false;

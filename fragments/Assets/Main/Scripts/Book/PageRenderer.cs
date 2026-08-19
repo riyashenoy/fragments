@@ -29,8 +29,24 @@ namespace Fragments.Book
             for (int i = 0; i < sorted.Count; i++)
                 DrawElement(px, w, h, sorted[i]);
 
+            // Sheet UVs have v=0 at the top of the page; Texture2D has y=0 at the bottom.
+            FlipVertical(px, w, h);
+
             page.texture.SetPixels32(px);
             page.texture.Apply(false);
+        }
+
+        static void FlipVertical(Color32[] px, int w, int h)
+        {
+            var row = new Color32[w];
+            for (int y = 0; y < h / 2; y++)
+            {
+                int a = y * w;
+                int b = (h - 1 - y) * w;
+                System.Array.Copy(px, a, row, 0, w);
+                System.Array.Copy(px, b, px, a, w);
+                System.Array.Copy(row, 0, px, b, w);
+            }
         }
 
         static void DrawRules(Color32[] px, int w, int h)

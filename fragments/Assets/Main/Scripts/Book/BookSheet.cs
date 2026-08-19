@@ -32,6 +32,8 @@ namespace Fragments.Book
         public bool IsBoard => kind == SheetKind.Board;
         public bool IsCover => kind != SheetKind.Page;
         public bool Asleep { get; private set; } = true;
+        public JournalPage FrontPage { get; set; }
+        public JournalPage BackPage { get; set; }
 
         Mesh _mesh;
         Vector3[] _rest, _work, _conv0;
