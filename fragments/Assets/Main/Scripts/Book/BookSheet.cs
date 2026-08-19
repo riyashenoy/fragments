@@ -50,9 +50,18 @@ namespace Fragments.Book
         BookSettings _s;
         bool _collisionEnabled = true;
         bool _leftBoardOpen;
+        float _leftFloorY = -9f;
 
-        /// <summary>Book tells each sheet whether the front board is lying open.</summary>
-        public void SetBoardOpen(bool open) => _leftBoardOpen = open;
+        /// <summary>
+        /// Book tells each sheet whether the front cover is lying open, and at
+        /// what world-Y pages may not sink below on the left of the spine.
+        /// Hardcover/rings: the rigid board at y≈0. Staples: the soft cover's stack height.
+        /// </summary>
+        public void SetBoardOpen(bool open, float leftFloorY = -9f)
+        {
+            _leftBoardOpen = open;
+            _leftFloorY = open ? leftFloorY : -9f;
+        }
         public void SetCollision(bool on) => _collisionEnabled = on;
 
         public float Angle => _ang;
@@ -297,7 +306,7 @@ namespace Fragments.Book
             {
                 float mrg = _s.coverPageClearance * 0.30f;
                 float rightTop = _s.coverThickness * 0.5f + mrg;
-                float leftTop = _leftBoardOpen ? (_s.coverThickness * 0.5f + mrg) : -9f;
+                float leftTop = _leftBoardOpen ? _leftFloorY : -9f;
                 for (int i = 0; i < _work.Length; i++)
                 {
                     float worldY = _work[i].y + _y;

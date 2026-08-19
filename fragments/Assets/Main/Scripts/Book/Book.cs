@@ -162,6 +162,21 @@ namespace Fragments.Book
             return b + (Sheets.Count - i) * gap;                // right pile, next-to-turn highest
         }
 
+        /// <summary>
+        /// World-Y pages must stay above on the left of the spine.
+        /// A hinged board lies near y=0; a staple soft cover sits in the page stack.
+        /// </summary>
+        float LeftFloorY()
+        {
+            float mrg = settings.coverPageClearance * 0.30f;
+            if (TurnedCount <= 0 || Sheets.Count == 0) return -9f;
+            var cover = Sheets[0];
+            if (cover.IsBoard)
+                return settings.coverThickness * 0.5f + mrg;
+            float halfT = settings.paperThickness * 1.8f * 0.5f;
+            return cover.StackY + halfT + mrg;
+        }
+
         // ==============================================================
         void BuildBackBoard(bool punched)
         {
@@ -380,7 +395,8 @@ namespace Fragments.Book
             }
 
             bool boardOpen = TurnedCount > 0;
-            for (int i = 0; i < Sheets.Count; i++) Sheets[i].SetBoardOpen(boardOpen);
+            float leftFloor = LeftFloorY();
+            for (int i = 0; i < Sheets.Count; i++) Sheets[i].SetBoardOpen(boardOpen, leftFloor);
 
             // Spine relaxes flat while open so pages never pass through it.
             _spineOpenTarget = (TurnedCount > 0 && TurnedCount < Sheets.Count) ? 1f : 0f;
@@ -395,10 +411,34 @@ namespace Fragments.Book
         public void SetOpenAmount(float t01)
         {
             if (Busy) return;
-            int target = Mathf.RoundToInt(Mathf.Clamp01(t01) * Sheets.Count);
+            RestoreSpread(Mathf.RoundToInt(Mathf.Clamp01(t01) * Sheets.Count));
+        }
+
+        /// <summary>
+        /// Snap every sheet to a finished spread without playing the turn animation.
+        /// Used after a rebuild so adding a page doesn't close the book.
+        /// </summary>
+        public void RestoreSpread(int turned)
+        {
+            if (Sheets.Count == 0) return;
+            int target = Mathf.Clamp(turned, 0, Sheets.Count);
             for (int i = 0; i < Sheets.Count; i++) Sheets[i].SetRest(i < target);
             TurnedCount = target;
-            for (int i = 0; i < Sheets.Count; i++) Sheets[i].StackY = StackY(i, TurnedCount);
+            bool boardOpen = target > 0;
+            for (int i = 0; i < Sheets.Count; i++)
+                Sheets[i].StackY = StackY(i, TurnedCount);
+            float leftFloor = LeftFloorY();
+            for (int i = 0; i < Sheets.Count; i++)
+                Sheets[i].SetBoardOpen(boardOpen, leftFloor);
+
+            _spineOpenTarget = (target > 0 && target < Sheets.Count) ? 1f : 0f;
+            _spineOpen = _spineOpenTarget;
+            if (_spineFlexRoot != null)
+            {
+                float sy = 1f - (1f - settings.spineFlatWhenOpen) * _spineOpen;
+                _spineFlexRoot.localScale = new Vector3(1f, sy, 1f);
+            }
+
             onSpreadChanged?.Invoke(TurnedCount);
         }
     }

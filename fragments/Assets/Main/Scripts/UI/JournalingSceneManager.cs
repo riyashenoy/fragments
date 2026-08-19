@@ -191,12 +191,16 @@ namespace Fragments.UI
         {
             if (book == null || _data == null) return;
             if (book.Busy) return;  // don't rebuild mid-turn
+            if (_data.sheetCount >= 16) return;
+
+            int spread = book.TurnedCount;
 
             _data.sheetCount = Mathf.Min(16, _data.sheetCount + 1);
             JournalStore.Save(_data);
 
             book.settings.sheetCount = _data.sheetCount;
             book.Build();
+            book.RestoreSpread(spread);
         }
 
         public void GoBack()
