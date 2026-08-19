@@ -187,6 +187,18 @@ namespace Fragments.UI
                 coverColorPreview.color = col;
         }
 
+        public void AddPage()
+        {
+            if (book == null || _data == null) return;
+            if (book.Busy) return;  // don't rebuild mid-turn
+
+            _data.sheetCount = Mathf.Min(16, _data.sheetCount + 1);
+            JournalStore.Save(_data);
+
+            book.settings.sheetCount = _data.sheetCount;
+            book.Build();
+        }
+
         public void GoBack()
         {
             // TODO: save journal contents before leaving (Phase 5)
