@@ -119,6 +119,17 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!114 &22107214 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2780135996324136216, guid: ce97fdf27be2b804bb2583d6d009d3c2, type: 3}
+  m_PrefabInstance: {fileID: 8721130386779736222}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f013bc2365d0b84082c557d9d8a1a0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Fragments.Book.Book
 --- !u!1 &188479497
 GameObject:
   m_ObjectHideFlags: 0
@@ -4149,7 +4160,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &2108853425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4162,7 +4173,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 226961fe378a15a40bb598e0898bfe39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Fragments.UI.JournalingSceneManager
-  journalPrefab: {fileID: 5718930031910299561, guid: 7d4373b81d4a6364a895938964403a0a, type: 3}
+  journalPrefab: {fileID: 952937833124483486, guid: ce97fdf27be2b804bb2583d6d009d3c2, type: 3}
   bookSpawnPoint: {fileID: 1318511404}
   bookUIController: {fileID: 1566291588}
   pagePlain: {fileID: 2100000, guid: 44e86c900974de54cb700e06d1da65c2, type: 2}
@@ -4173,6 +4184,7 @@ MonoBehaviour:
   journalNameText: {fileID: 205392472}
   coverColorPreview: {fileID: 1270456764}
   sceneNavigator: {fileID: 1575625408}
+  book: {fileID: 22107214}
 --- !u!4 &2108853426
 Transform:
   m_ObjectHideFlags: 0

@@ -29,6 +29,8 @@ namespace Fragments.Book
         [Header("Events")]
         public UnityEvent<int> onSpreadChanged;
 
+        [SerializeField] bool buildOnStart = true;
+
         public List<BookSheet> Sheets { get; private set; } = new();
         public int TurnedCount { get; private set; }
         public float CoverTop { get; private set; }
@@ -36,7 +38,10 @@ namespace Fragments.Book
         Transform _bindingRoot, _spineFlexRoot;
         float _spineOpen, _spineOpenTarget;
 
-        void Start() { if (settings != null) Build(); }
+        void Start()
+        {
+            if (buildOnStart && settings != null) Build();
+        }
 
         // ==============================================================
         [ContextMenu("Rebuild Book")]
@@ -129,8 +134,11 @@ namespace Fragments.Book
                 pivot, go.transform);
 
             var mc = go.AddComponent<MeshCollider>();
-            mc.sharedMesh = gen.mesh;
             mc.convex = false;
+            mc.cookingOptions = MeshColliderCookingOptions.None;
+            // Dedicated copy — Unity collider cooking must never touch the deforming visual mesh
+            // or pages can weld/sink through the cover mid-turn.
+            mc.sharedMesh = Object.Instantiate(gen.mesh);
 
             // subtle per-sheet irregularity so the stack isn't cloned rectangles
             if (kind == SheetKind.Page && s.irregularity > 0f)

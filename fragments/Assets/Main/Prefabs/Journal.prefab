@@ -210,6 +210,7 @@ MonoBehaviour:
   onSpreadChanged:
     m_PersistentCalls:
       m_Calls: []
+  buildOnStart: 0
 --- !u!114 &359658428719052790
 MonoBehaviour:
   m_ObjectHideFlags: 0

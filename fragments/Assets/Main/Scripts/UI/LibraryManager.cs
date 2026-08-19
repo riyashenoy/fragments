@@ -19,33 +19,71 @@ namespace Fragments.UI
         [Tooltip("If null, the script reuses the existing slot and just swaps text/color.")]
         public GameObject filledSlotPrefab;
 
+        Color[] _emptySlotColors;
+        GameObject[] _filledInstances;
+
         void Start()
+        {
+            CacheEmptySlotColors();
+            PopulateSlots();
+        }
+
+        public void Refresh()
         {
             PopulateSlots();
         }
 
+        void CacheEmptySlotColors()
+        {
+            _emptySlotColors = new Color[slots.Length];
+            for (int i = 0; i < slots.Length; i++)
+            {
+                var img = slots[i] != null ? slots[i].GetComponent<Image>() : null;
+                _emptySlotColors[i] = img != null ? img.color : Color.white;
+            }
+        }
+
         void PopulateSlots()
         {
+            ClearFilledInstances();
+
             List<JournalData> journals = JournalStore.LoadAll();
+            if (_filledInstances == null || _filledInstances.Length != slots.Length)
+                _filledInstances = new GameObject[slots.Length];
 
             for (int i = 0; i < slots.Length; i++)
             {
                 if (slots[i] == null) continue;
 
                 if (i < journals.Count)
-                {
-                    SetupFilledSlot(slots[i], journals[i]);
-                }
+                    SetupFilledSlot(i, journals[i]);
                 else
-                {
-                    SetupEmptySlot(slots[i]);
-                }
+                    SetupEmptySlot(slots[i], i);
             }
         }
 
-        void SetupFilledSlot(GameObject slot, JournalData journal)
+        void ClearFilledInstances()
         {
-            // If you have a separate filled prefab, swap it in
+            if (_filledInstances == null) return;
+
+            for (int i = 0; i < _filledInstances.Length; i++)
+            {
+                if (_filledInstances[i] != null)
+                    DestroyImmediate(_filledInstances[i]);
+                _filledInstances[i] = null;
+            }
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i] != null)
+                    slots[i].SetActive(true);
+            }
+        }
+
+        void SetupFilledSlot(int index, JournalData journal)
+        {
+            GameObject slot = slots[index];
+
             if (filledSlotPrefab != null)
             {
                 GameObject filled = Instantiate(filledSlotPrefab, slot.transform.parent);
@@ -65,29 +103,23 @@ namespace Fragments.UI
                 }
 
                 slot.SetActive(false);
+                _filledInstances[index] = filled;
                 slot = filled;
             }
 
-            // Find child texts — looks for ANY TMP_Text children
             TMP_Text[] texts = slot.GetComponentsInChildren<TMP_Text>(true);
 
             foreach (TMP_Text t in texts)
             {
                 if (t.text.Trim() == "+")
-                {
-                    // This is the plus sign — hide it
                     t.gameObject.SetActive(false);
-                }
                 else
                 {
-                    // This is the name label — show it with the journal name
                     t.gameObject.SetActive(true);
                     t.text = journal.journalName;
                 }
             }
 
-            // If there's no existing name label (all texts were "+"),
-            // just repurpose the "+" text
             bool hasNameLabel = false;
             foreach (TMP_Text t in texts)
             {
@@ -103,14 +135,12 @@ namespace Fragments.UI
                 texts[0].text = journal.journalName;
             }
 
-            // Tint the slot background to the cover color
             if (ColorUtility.TryParseHtmlString(journal.coverColorHex, out Color col))
             {
                 Image img = slot.GetComponent<Image>();
                 if (img != null) img.color = col;
             }
 
-            // Wire the click — open this journal directly
             Button btn = slot.GetComponent<Button>();
             if (btn != null)
             {
@@ -120,9 +150,10 @@ namespace Fragments.UI
             }
         }
 
-        void SetupEmptySlot(GameObject slot)
+        void SetupEmptySlot(GameObject slot, int index)
         {
-            // Make sure the "+" is visible
+            slot.SetActive(true);
+
             TMP_Text[] texts = slot.GetComponentsInChildren<TMP_Text>(true);
             foreach (TMP_Text t in texts)
             {
@@ -132,7 +163,10 @@ namespace Fragments.UI
                     t.gameObject.SetActive(false);
             }
 
-            // Wire the click — go to creation screen
+            Image img = slot.GetComponent<Image>();
+            if (img != null && _emptySlotColors != null && index < _emptySlotColors.Length)
+                img.color = _emptySlotColors[index];
+
             Button btn = slot.GetComponent<Button>();
             if (btn != null)
             {

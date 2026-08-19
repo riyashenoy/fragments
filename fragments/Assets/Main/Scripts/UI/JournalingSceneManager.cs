@@ -39,6 +39,9 @@ namespace Fragments.UI
         [Header("Navigation")]
         public SceneNavigator sceneNavigator;
 
+        [Header("Book")]
+        public Fragments.Book.Book book;
+
         JournalData _data;
         Journal _journal;
 
@@ -60,6 +63,8 @@ namespace Fragments.UI
                 return;
             }
 
+            ApplyDataToBook();
+
             _data.lastOpenedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             JournalStore.Save(_data);
 
@@ -69,6 +74,37 @@ namespace Fragments.UI
             Debug.Log("[Fragments] Loaded: " + _data.journalName +
                       " | Cover: " + _data.coverColorHex +
                       " | Pattern: " + _data.pagePattern);
+        }
+
+        void ApplyDataToBook()
+        {
+            if (book == null || book.settings == null) return;
+
+            // Runtime copy so we don't dirty the shared BookSettings asset
+            book.settings = Instantiate(book.settings);
+
+            // Binding type
+            book.settings.binding = _data.binding switch
+            {
+                "rings" => Fragments.Book.BindingType.Rings,
+                "staples" => Fragments.Book.BindingType.Staples,
+                _ => Fragments.Book.BindingType.Hardcover
+            };
+
+            // Sheet count
+            book.settings.sheetCount = Mathf.Clamp(_data.sheetCount, 3, 16);
+
+            // Cover color
+            if (book.coverMaterial != null &&
+                ColorUtility.TryParseHtmlString(_data.coverColorHex, out Color coverCol))
+            {
+                // Create runtime copy so we don't modify the asset
+                book.coverMaterial = new Material(book.coverMaterial);
+                book.coverMaterial.color = coverCol;
+            }
+
+            // Rebuild with new settings
+            book.Build();
         }
 
         void SpawnAndStyleBook()

@@ -203,11 +203,18 @@ namespace Fragments.Book
         {
             if (s == null) return;
             var mc = s.GetComponent<MeshCollider>();
-            if (mc == null) return;
-            var mesh = s.GetComponent<MeshFilter>()?.sharedMesh;
-            if (mesh == null) return;
+            var src = s.GetComponent<MeshFilter>()?.sharedMesh;
+            if (mc == null || src == null) return;
+
+            var copy = new Mesh { name = src.name + "_col", indexFormat = src.indexFormat };
+            copy.vertices = src.vertices;
+            copy.triangles = src.triangles;
+            copy.uv = src.uv;
+            copy.RecalculateBounds();
+
+            mc.cookingOptions = MeshColliderCookingOptions.None;
             mc.sharedMesh = null;
-            mc.sharedMesh = mesh;
+            mc.sharedMesh = copy;
         }
     }
 }

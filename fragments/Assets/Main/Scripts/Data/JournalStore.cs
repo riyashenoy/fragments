@@ -41,5 +41,12 @@ namespace Fragments.Data
             string path = Path.Combine(Root, id + ".json");
             if (File.Exists(path)) File.Delete(path);
         }
+
+        public static void DeleteAll()
+        {
+            if (!Directory.Exists(Root)) return;
+            foreach (var file in Directory.GetFiles(Root, "*.json"))
+                File.Delete(file);
+        }
     }
 }
