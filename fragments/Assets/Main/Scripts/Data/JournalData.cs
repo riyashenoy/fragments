@@ -10,6 +10,8 @@ namespace Fragments.Data
         public string journalName;
         public string coverColorHex;
         public string pagePattern; // "plain", "dotted", "striped"
+        public string binding = "hardcover"; // "hardcover", "rings", "staples"
+        public int sheetCount = 8; // 3–16
         public long createdAt;
         public long lastOpenedAt;
         public List<PageData> pages = new();
