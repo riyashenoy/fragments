@@ -89,8 +89,17 @@ namespace Fragments.Book
             GetComponent<MeshFilter>().sharedMesh = _mesh;
             GetComponent<MeshRenderer>().sharedMaterials = new[] { front, back, edge };
 
-            frontPageIndex = idx * 2;
-            backPageIndex = idx * 2 + 1;
+            // Cover is sheet 0 and has no JournalPages; paper indices start at 0.
+            if (k == SheetKind.Page)
+            {
+                frontPageIndex = (idx - 1) * 2;
+                backPageIndex = (idx - 1) * 2 + 1;
+            }
+            else
+            {
+                frontPageIndex = -1;
+                backPageIndex = -1;
+            }
 
             SetRest(false);
         }

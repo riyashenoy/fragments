@@ -142,8 +142,9 @@ namespace Fragments.Book
             }
             else
             {
-                frontPage = new JournalPage(i * 2);
-                backPage = new JournalPage(i * 2 + 1);
+                // Sheet 0 is the cover — paper sheets start at i=1, so page 1 is index 0.
+                frontPage = new JournalPage((i - 1) * 2);
+                backPage = new JournalPage((i - 1) * 2 + 1);
                 Pages.Add(frontPage);
                 Pages.Add(backPage);
                 PageRenderer.Render(frontPage);

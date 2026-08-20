@@ -29,35 +29,18 @@ namespace Fragments.Book
             for (int i = 0; i < sorted.Count; i++)
                 DrawElement(px, w, h, sorted[i]);
 
-            // Sheet UVs have v=0 at the top of the page; Texture2D has y=0 at the bottom.
-            FlipVertical(px, w, h);
-
+            // Mesh UVs put v=0 at the PAGE TOP. Draw in that same space (texture y=0 = page top)
+            // so stamp UVs land exactly where the click is — no post flip.
             page.texture.SetPixels32(px);
             page.texture.Apply(false);
-        }
-
-        static void FlipVertical(Color32[] px, int w, int h)
-        {
-            var row = new Color32[w];
-            for (int y = 0; y < h / 2; y++)
-            {
-                int a = y * w;
-                int b = (h - 1 - y) * w;
-                System.Array.Copy(px, a, row, 0, w);
-                System.Array.Copy(px, b, px, a, w);
-                System.Array.Copy(row, 0, px, b, w);
-            }
         }
 
         static void DrawRules(Color32[] px, int w, int h)
         {
             var line = new Color32(92, 112, 142, 33); // rgba(92,112,142,.13)
             const int step = 40;
-            for (int canvasY = 100; canvasY < h - 50; canvasY += step)
-            {
-                int y = h - 1 - canvasY;
+            for (int y = 100; y < h - 50; y += step)
                 FillHLine(px, w, h, 72, w - 44, y, line);
-            }
         }
 
         static void DrawPageNumber(Color32[] px, int w, int h, int index)
@@ -65,7 +48,7 @@ namespace Fragments.Book
             var ink = new Color32(92, 82, 62, 92); // rgba(92,82,62,.36)
             string num = (index + 1).ToString();
             bool even = (index & 1) == 0;
-            int y = 26;
+            int y = h - 26 - DigitH * DigitScale;
             if (even)
                 DrawDigits(px, w, h, num, w - 42, y, ink, true);
             else
@@ -75,8 +58,9 @@ namespace Fragments.Book
         static void DrawElement(Color32[] px, int w, int h, PageElement e)
         {
             if (e == null) return;
+            // v=0 at page top (matches sheet mesh UV)
             float cx = e.u * w;
-            float cy = (1f - e.v) * h;
+            float cy = e.v * h;
             Color32 col = Parse(e.colorHex, new Color32(0xD9, 0x58, 0x4A, 255));
             float s = Mathf.Max(0.05f, e.scale);
 
@@ -253,7 +237,7 @@ namespace Fragments.Book
         {
             for (int row = 0; row < DigitH; row++)
             {
-                byte bits = rows[DigitH - 1 - row]; // glyph row 0 is the top of the digit
+                byte bits = rows[row]; // glyph row 0 is the top of the digit
                 for (int bit = 0; bit < DigitW; bit++)
                 {
                     if ((bits & (1 << (DigitW - 1 - bit))) == 0) continue;

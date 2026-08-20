@@ -12,8 +12,15 @@ namespace Fragments.Book
         [SerializeField] Book book;
         [SerializeField] Camera mainCamera;
 
+        [Header("Stamp Tool")]
+        public string activeStampType = "sticker";
+        public string activeStampColorHex = "#D9584A";
+
         BookSheet _held;
         int _heldDir = 1;
+        Vector2 pressScreenPos;
+        bool didMove;
+        const float MOVE_THRESHOLD = 4f;  // pixels
 
         void OnEnable()
         {
@@ -27,9 +34,23 @@ namespace Fragments.Book
             if (mouse != null)
             {
                 Vector2 pos = mouse.position.ReadValue();
-                if (mouse.leftButton.wasPressedThisFrame) BeginGrab(pos);
-                if (_held != null && mouse.leftButton.isPressed) MoveGrab(pos);
-                if (mouse.leftButton.wasReleasedThisFrame && _held != null) EndGrab();
+                if (mouse.leftButton.wasPressedThisFrame)
+                {
+                    pressScreenPos = pos;
+                    didMove = false;
+                    BeginGrab(pos);
+                }
+                if (mouse.leftButton.isPressed)
+                {
+                    if (!didMove && Vector2.Distance(pos, pressScreenPos) > MOVE_THRESHOLD)
+                        didMove = true;
+                    if (_held != null) MoveGrab(pos);
+                }
+                if (mouse.leftButton.wasReleasedThisFrame)
+                {
+                    if (_held != null) EndGrab();
+                    else if (!didMove) TryStamp(pressScreenPos);
+                }
             }
 
             var kb = Keyboard.current;
@@ -140,6 +161,54 @@ namespace Fragments.Book
 
         public void UpdatePeel(Vector3 worldPosition) => MoveGrabWorld(worldPosition);
         public void EndPeel() => EndGrab();
+
+        // ------------------------------------------------------------------
+        // stamp: click without drag — only the currently visible spread faces
+        void TryStamp(Vector2 screenPos)
+        {
+            if (book == null || mainCamera == null || book.Busy) return;
+
+            var next = book.NextSheet;
+            var prev = book.PrevSheet;
+            Cook(next);
+            Cook(prev);
+
+            Ray ray = mainCamera.ScreenPointToRay(screenPos);
+            BookSheet sheet = null;
+            RaycastHit hit = default;
+            float best = float.MaxValue;
+            TryCandidate(next, ray, ref sheet, ref hit, ref best);
+            TryCandidate(prev, ray, ref sheet, ref hit, ref best);
+            if (sheet == null || sheet.IsBoard || sheet.IsCover) return;
+
+            // Right pile shows the front; left (turned) pile shows the back.
+            bool onRight = sheet == next;
+            bool isTop = (hit.triangleIndex * 3) < sheet.topTriangleCount;
+            // Reject hits on the underside of a thin sheet (would stamp the hidden face).
+            if (onRight != isTop) return;
+
+            JournalPage page = onRight ? sheet.FrontPage : sheet.BackPage;
+            if (page == null) return;
+
+            Vector2 uv = hit.textureCoord;
+            // Back-face mesh UVs are already mirrored in u; undo so binding stays at u≈0.
+            float u = isTop ? uv.x : 1f - uv.x;
+            // Mesh UV v=0 is page top — same space PageRenderer draws into.
+            float v = uv.y;
+            if (u < 0.03f) return;
+
+            var el = new PageElement
+            {
+                type = activeStampType,
+                u = u, v = v,
+                rotation = Random.Range(-0.25f, 0.25f),
+                scale = Random.Range(0.85f, 1.20f),
+                colorHex = activeStampColorHex,
+                layer = page.elements.Count
+            };
+            page.Add(el);
+            PageRenderer.Render(page);
+        }
 
         // ------------------------------------------------------------------
         struct MaterialPoint { public float x, z; public bool top; }
