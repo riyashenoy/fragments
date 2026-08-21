@@ -17,5 +17,9 @@ namespace Fragments.Book
         // For draw strokes only
         public List<StrokePoint> points = new();
         public float thickness = 2f;
+
+        // For text
+        public string text = "";
+        public float fontSize = 20f;
     }
 }

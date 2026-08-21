@@ -1,11 +1,13 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
 namespace Fragments.Book
 {
     /// <summary>
     /// Mouse / XR input that mirrors the v10 prototype's beginGrab / moveGrab / endGrab.
     /// Pointer math is done in book-local space (the HTML book's world space).
+    /// Also handles stamp (click), freehand draw, and text placement.
     /// </summary>
     public class BookDragInput : MonoBehaviour
     {
@@ -16,16 +18,47 @@ namespace Fragments.Book
         public string activeStampType = "sticker";
         public string activeStampColorHex = "#D9584A";
 
+        [Header("Draw Tool")]
+        public bool drawModeActive = false;
+        public float baseThickness = 2f;
+
+        [Header("Text Tool")]
+        public bool textModeActive = false;
+        public TMP_InputField textInputField;
+        public float textFontSize = 20f;
+
         BookSheet _held;
         int _heldDir = 1;
         Vector2 pressScreenPos;
         bool didMove;
         const float MOVE_THRESHOLD = 4f;  // pixels
+        const float STROKE_MIN_PIXELS = 2f;
+
+        PageElement activeStroke;
+        JournalPage activeStrokePage;
+        Vector2 lastStrokeScreenPos;
+
+        JournalPage _pendingTextPage;
+        float _pendingTextU, _pendingTextV;
+        bool _awaitingText;
 
         void OnEnable()
         {
             if (book == null) book = GetComponent<Book>();
             if (mainCamera == null) mainCamera = Camera.main;
+
+            if (textInputField != null)
+            {
+                textInputField.gameObject.SetActive(false);
+                textInputField.onEndEdit.RemoveListener(OnTextSubmitted);
+                textInputField.onEndEdit.AddListener(OnTextSubmitted);
+            }
+        }
+
+        void OnDisable()
+        {
+            if (textInputField != null)
+                textInputField.onEndEdit.RemoveListener(OnTextSubmitted);
         }
 
         void Update()
@@ -33,6 +66,18 @@ namespace Fragments.Book
             var mouse = Mouse.current;
             if (mouse != null)
             {
+                if (drawModeActive)
+                {
+                    HandleDrawInput();
+                    return;  // draw mode takes over — no page dragging
+                }
+
+                if (textModeActive)
+                {
+                    HandleTextInput();
+                    return;
+                }
+
                 Vector2 pos = mouse.position.ReadValue();
                 if (mouse.leftButton.wasPressedThisFrame)
                 {
@@ -58,6 +103,125 @@ namespace Fragments.Book
             {
                 if (kb.rightArrowKey.wasPressedThisFrame) book.TurnForward();
                 if (kb.leftArrowKey.wasPressedThisFrame) book.TurnBackward();
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // text
+        void HandleTextInput()
+        {
+            if (_awaitingText) return; // wait for InputField submit
+
+            var mouse = Mouse.current;
+            if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
+
+            Vector2 pos = mouse.position.ReadValue();
+            if (!TryGetPageHit(pos, out _, out JournalPage page, out float u, out float v, out _))
+                return;
+
+            _pendingTextPage = page;
+            _pendingTextU = u;
+            _pendingTextV = v;
+            _awaitingText = true;
+
+            if (textInputField == null)
+            {
+                // No UI field assigned — place a placeholder so the tool still works.
+                CommitText("text");
+                return;
+            }
+
+            textInputField.gameObject.SetActive(true);
+            textInputField.text = "";
+            textInputField.Select();
+            textInputField.ActivateInputField();
+        }
+
+        void OnTextSubmitted(string value)
+        {
+            if (!_awaitingText) return;
+            CommitText(value);
+        }
+
+        void CommitText(string value)
+        {
+            _awaitingText = false;
+            if (textInputField != null)
+                textInputField.gameObject.SetActive(false);
+
+            if (_pendingTextPage == null) return;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                _pendingTextPage = null;
+                return;
+            }
+
+            var el = new PageElement
+            {
+                type = "text",
+                text = value.Trim(),
+                fontSize = textFontSize,
+                u = _pendingTextU,
+                v = _pendingTextV,
+                scale = 1f,
+                colorHex = activeStampColorHex,
+                layer = _pendingTextPage.elements.Count
+            };
+            _pendingTextPage.Add(el);
+            PageRenderer.Render(_pendingTextPage);
+            _pendingTextPage = null;
+        }
+
+        // ------------------------------------------------------------------
+        // draw
+        void HandleDrawInput()
+        {
+            var mouse = Mouse.current;
+            if (mouse == null || book == null || mainCamera == null) return;
+
+            Vector2 pos = mouse.position.ReadValue();
+
+            if (mouse.leftButton.wasPressedThisFrame)
+            {
+                if (!TryGetPageHit(pos, out _, out JournalPage page, out float u, out float v, out _))
+                    return;
+
+                activeStroke = new PageElement
+                {
+                    type = "stroke",
+                    colorHex = activeStampColorHex,
+                    thickness = baseThickness,
+                    scale = 1f,
+                    layer = page.elements.Count,
+                    u = u,
+                    v = v
+                };
+                activeStroke.points.Add(new StrokePoint { u = u, v = v, pressure = 1f });
+                page.Add(activeStroke);
+                activeStrokePage = page;
+                lastStrokeScreenPos = pos;
+                PageRenderer.Render(page);
+            }
+
+            if (mouse.leftButton.isPressed && activeStroke != null && activeStrokePage != null)
+            {
+                if (!TryGetPageHit(pos, out _, out JournalPage page, out float u, out float v, out _))
+                    return;
+                if (page != activeStrokePage) return;
+
+                float moved = Vector2.Distance(pos, lastStrokeScreenPos);
+                if (moved < STROKE_MIN_PIXELS) return;
+
+                float pressure = Mathf.Clamp01(1f - (moved / 40f));
+                activeStroke.points.Add(new StrokePoint { u = u, v = v, pressure = pressure });
+                lastStrokeScreenPos = pos;
+                PageRenderer.Render(activeStrokePage);
+            }
+
+            if (mouse.leftButton.wasReleasedThisFrame)
+            {
+                activeStroke = null;
+                activeStrokePage = null;
             }
         }
 
@@ -141,7 +305,7 @@ namespace Fragments.Book
         // XR: same three functions, driven by a world-space pinch
         public void BeginPeel(Vector3 worldPosition)
         {
-            if (book == null) return;
+            if (book == null || drawModeActive) return;
             var ray = new Ray(worldPosition + book.transform.up * 0.08f, -book.transform.up);
             if (!BeginGrabRay(ray))
             {
@@ -166,36 +330,9 @@ namespace Fragments.Book
         // stamp: click without drag — only the currently visible spread faces
         void TryStamp(Vector2 screenPos)
         {
-            if (book == null || mainCamera == null || book.Busy) return;
-
-            var next = book.NextSheet;
-            var prev = book.PrevSheet;
-            Cook(next);
-            Cook(prev);
-
-            Ray ray = mainCamera.ScreenPointToRay(screenPos);
-            BookSheet sheet = null;
-            RaycastHit hit = default;
-            float best = float.MaxValue;
-            TryCandidate(next, ray, ref sheet, ref hit, ref best);
-            TryCandidate(prev, ray, ref sheet, ref hit, ref best);
-            if (sheet == null || sheet.IsBoard || sheet.IsCover) return;
-
-            // Right pile shows the front; left (turned) pile shows the back.
-            bool onRight = sheet == next;
-            bool isTop = (hit.triangleIndex * 3) < sheet.topTriangleCount;
-            // Reject hits on the underside of a thin sheet (would stamp the hidden face).
-            if (onRight != isTop) return;
-
-            JournalPage page = onRight ? sheet.FrontPage : sheet.BackPage;
-            if (page == null) return;
-
-            Vector2 uv = hit.textureCoord;
-            // Back-face mesh UVs are already mirrored in u; undo so binding stays at u≈0.
-            float u = isTop ? uv.x : 1f - uv.x;
-            // Mesh UV v=0 is page top — same space PageRenderer draws into.
-            float v = uv.y;
-            if (u < 0.03f) return;
+            if (book == null || book.Busy) return;
+            if (!TryGetPageHit(screenPos, out _, out JournalPage page, out float u, out float v, out _))
+                return;
 
             var el = new PageElement
             {
@@ -208,6 +345,44 @@ namespace Fragments.Book
             };
             page.Add(el);
             PageRenderer.Render(page);
+        }
+
+        bool TryGetPageHit(Vector2 screenPos, out BookSheet sheet, out JournalPage page,
+                           out float u, out float v, out bool isTop)
+        {
+            sheet = null;
+            page = null;
+            u = v = 0f;
+            isTop = false;
+
+            if (book == null || mainCamera == null) return false;
+
+            var next = book.NextSheet;
+            var prev = book.PrevSheet;
+            Cook(next);
+            Cook(prev);
+
+            Ray ray = mainCamera.ScreenPointToRay(screenPos);
+            RaycastHit hit = default;
+            float best = float.MaxValue;
+            TryCandidate(next, ray, ref sheet, ref hit, ref best);
+            TryCandidate(prev, ray, ref sheet, ref hit, ref best);
+            if (sheet == null || sheet.IsBoard || sheet.IsCover) return false;
+
+            // Right pile shows the front; left (turned) pile shows the back.
+            bool onRight = sheet == next;
+            isTop = (hit.triangleIndex * 3) < sheet.topTriangleCount;
+            // Reject hits on the underside of a thin sheet.
+            if (onRight != isTop) return false;
+
+            page = onRight ? sheet.FrontPage : sheet.BackPage;
+            if (page == null) return false;
+
+            Vector2 uv = hit.textureCoord;
+            u = isTop ? uv.x : 1f - uv.x;
+            v = uv.y;
+            if (u < 0.03f) return false;
+            return true;
         }
 
         // ------------------------------------------------------------------

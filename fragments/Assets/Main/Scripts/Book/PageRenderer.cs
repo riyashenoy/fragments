@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 namespace Fragments.Book
 {
@@ -10,6 +11,9 @@ namespace Fragments.Book
     /// </summary>
     public static class PageRenderer
     {
+        const int TextTexW = 256;
+        const int TextTexH = 64;
+
         public static void Render(JournalPage page)
         {
             if (page == null || page.texture == null) return;
@@ -75,9 +79,97 @@ namespace Fragments.Book
                 case "stroke":
                     DrawStroke(px, w, h, e, col, s);
                     break;
+                case "text":
+                    DrawText(px, w, h, e, col, s);
+                    break;
                 default:
                     DrawSticker(px, w, h, cx, cy, 28f * s, col);
                     break;
+            }
+        }
+
+        static void DrawText(Color32[] px, int w, int h, PageElement e, Color32 col, float scale)
+        {
+            if (string.IsNullOrEmpty(e.text)) return;
+
+            int fontPx = Mathf.Max(8, Mathf.RoundToInt(e.fontSize * scale));
+            Texture2D tex = RenderTextToTexture(e.text, fontPx, col);
+            if (tex == null) return;
+
+            // Centered at click UV (same space as stickers/strokes).
+            float cx = e.u * w;
+            float cy = e.v * h;
+            CompositeCentered(px, w, h, tex, cx, cy);
+            if (Application.isPlaying) UnityEngine.Object.Destroy(tex);
+            else UnityEngine.Object.DestroyImmediate(tex);
+        }
+
+        static Texture2D RenderTextToTexture(string text, int fontSize, Color color)
+        {
+            var go = new GameObject("TextRender");
+            go.hideFlags = HideFlags.HideAndDontSave;
+
+            var cam = go.AddComponent<Camera>();
+            var textGO = new GameObject("Text");
+            textGO.hideFlags = HideFlags.HideAndDontSave;
+            textGO.transform.SetParent(go.transform, false);
+
+            var tmp = textGO.AddComponent<TextMeshPro>();
+            if (TMP_Settings.defaultFontAsset != null)
+                tmp.font = TMP_Settings.defaultFontAsset;
+            tmp.text = text;
+            tmp.fontSize = fontSize;
+            tmp.color = color;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.rectTransform.sizeDelta = new Vector2(8f, 2f);
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
+            tmp.ForceMeshUpdate();
+
+            var rt = RenderTexture.GetTemporary(TextTexW, TextTexH, 16, RenderTextureFormat.ARGB32);
+            cam.targetTexture = rt;
+            cam.orthographic = true;
+            cam.orthographicSize = 1.2f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0, 0, 0, 0);
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 20f;
+            cam.enabled = false;
+            cam.transform.position = textGO.transform.position + Vector3.back * 2f;
+            cam.transform.rotation = Quaternion.identity;
+            cam.Render();
+
+            RenderTexture.active = rt;
+            var tex = new Texture2D(TextTexW, TextTexH, TextureFormat.RGBA32, false);
+            tex.ReadPixels(new Rect(0, 0, TextTexW, TextTexH), 0, 0);
+            tex.Apply(false);
+
+            RenderTexture.active = null;
+            cam.targetTexture = null;
+            RenderTexture.ReleaseTemporary(rt);
+            if (Application.isPlaying) UnityEngine.Object.Destroy(go);
+            else UnityEngine.Object.DestroyImmediate(go);
+            return tex;
+        }
+
+        static void CompositeCentered(Color32[] dest, int dw, int dh, Texture2D src, float cx, float cy)
+        {
+            var srcPx = src.GetPixels32();
+            int sw = src.width, sh = src.height;
+            int x0 = Mathf.RoundToInt(cx - sw * 0.5f);
+            int y0 = Mathf.RoundToInt(cy - sh * 0.5f);
+
+            for (int sy = 0; sy < sh; sy++)
+            {
+                int dy = y0 + sy;
+                if ((uint)dy >= (uint)dh) continue;
+                for (int sx = 0; sx < sw; sx++)
+                {
+                    int dx = x0 + sx;
+                    if ((uint)dx >= (uint)dw) continue;
+                    Color32 s = srcPx[sy * sw + sx];
+                    if (s.a == 0) continue;
+                    Blend(dest, dy * dw + dx, s);
+                }
             }
         }
 
