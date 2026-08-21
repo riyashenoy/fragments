@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using TMPro;
 
 namespace Fragments.Book
 {
@@ -24,8 +23,10 @@ namespace Fragments.Book
 
         [Header("Text Tool")]
         public bool textModeActive = false;
-        public TMP_InputField textInputField;
         public float textFontSize = 20f;
+
+        [Header("Text Input")]
+        public Fragments.UI.TextInputController textInputController;
 
         BookSheet _held;
         int _heldDir = 1;
@@ -38,27 +39,12 @@ namespace Fragments.Book
         JournalPage activeStrokePage;
         Vector2 lastStrokeScreenPos;
 
-        JournalPage _pendingTextPage;
-        float _pendingTextU, _pendingTextV;
         bool _awaitingText;
 
         void OnEnable()
         {
             if (book == null) book = GetComponent<Book>();
             if (mainCamera == null) mainCamera = Camera.main;
-
-            if (textInputField != null)
-            {
-                textInputField.gameObject.SetActive(false);
-                textInputField.onEndEdit.RemoveListener(OnTextSubmitted);
-                textInputField.onEndEdit.AddListener(OnTextSubmitted);
-            }
-        }
-
-        void OnDisable()
-        {
-            if (textInputField != null)
-                textInputField.onEndEdit.RemoveListener(OnTextSubmitted);
         }
 
         void Update()
@@ -110,7 +96,8 @@ namespace Fragments.Book
         // text
         void HandleTextInput()
         {
-            if (_awaitingText) return; // wait for InputField submit
+            if (_awaitingText) return;
+            if (textInputController == null) return;
 
             var mouse = Mouse.current;
             if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
@@ -119,57 +106,25 @@ namespace Fragments.Book
             if (!TryGetPageHit(pos, out _, out JournalPage page, out float u, out float v, out _))
                 return;
 
-            _pendingTextPage = page;
-            _pendingTextU = u;
-            _pendingTextV = v;
             _awaitingText = true;
-
-            if (textInputField == null)
-            {
-                // No UI field assigned — place a placeholder so the tool still works.
-                CommitText("text");
-                return;
-            }
-
-            textInputField.gameObject.SetActive(true);
-            textInputField.text = "";
-            textInputField.Select();
-            textInputField.ActivateInputField();
-        }
-
-        void OnTextSubmitted(string value)
-        {
-            if (!_awaitingText) return;
-            CommitText(value);
-        }
-
-        void CommitText(string value)
-        {
-            _awaitingText = false;
-            if (textInputField != null)
-                textInputField.gameObject.SetActive(false);
-
-            if (_pendingTextPage == null) return;
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                _pendingTextPage = null;
-                return;
-            }
-
-            var el = new PageElement
-            {
-                type = "text",
-                text = value.Trim(),
-                fontSize = textFontSize,
-                u = _pendingTextU,
-                v = _pendingTextV,
-                scale = 1f,
-                colorHex = activeStampColorHex,
-                layer = _pendingTextPage.elements.Count
-            };
-            _pendingTextPage.Add(el);
-            PageRenderer.Render(_pendingTextPage);
-            _pendingTextPage = null;
+            textInputController.Prompt(
+                (typedText) =>
+                {
+                    _awaitingText = false;
+                    var el = new PageElement
+                    {
+                        type = "text",
+                        u = u, v = v,
+                        text = typedText,
+                        colorHex = activeStampColorHex,
+                        fontSize = textFontSize > 0f ? textFontSize : 20f,
+                        scale = 1f,
+                        layer = page.elements.Count
+                    };
+                    page.Add(el);
+                    PageRenderer.Render(page);
+                },
+                () => { _awaitingText = false; });
         }
 
         // ------------------------------------------------------------------

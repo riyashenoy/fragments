@@ -18,6 +18,12 @@ namespace Fragments.UI
         public Outline tapeOutline;
         public Outline photoOutline;
 
+        [Header("Draw/Text Buttons")]
+        public Button drawBtn;
+        public Button textBtn;
+        public Outline drawOutline;
+        public Outline textOutline;
+
         [Header("Color Swatches")]
         public Button[] colorSwatches;
         public string[] colorHexValues;
@@ -27,6 +33,8 @@ namespace Fragments.UI
             stickerBtn.onClick.AddListener(() => SetTool("sticker"));
             tapeBtn.onClick.AddListener(() => SetTool("tape"));
             photoBtn.onClick.AddListener(() => SetTool("photo"));
+            drawBtn.onClick.AddListener(() => SetTool("draw"));
+            textBtn.onClick.AddListener(() => SetTool("text"));
 
             for (int i = 0; i < colorSwatches.Length; i++)
             {
@@ -41,9 +49,14 @@ namespace Fragments.UI
         void SetTool(string type)
         {
             bookInput.activeStampType = type;
+            bookInput.drawModeActive = (type == "draw");
+            bookInput.textModeActive = (type == "text");
+
             if (stickerOutline) stickerOutline.enabled = type == "sticker";
             if (tapeOutline) tapeOutline.enabled = type == "tape";
             if (photoOutline) photoOutline.enabled = type == "photo";
+            if (drawOutline) drawOutline.enabled = type == "draw";
+            if (textOutline) textOutline.enabled = type == "text";
         }
 
         void SetColor(string hex, int idx)
