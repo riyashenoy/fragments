@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Fragments.Data;
+using Fragments.Book;
 using Found.Journal3D;
 using Image = UnityEngine.UI.Image;
 using Debug = UnityEngine.Debug;
@@ -29,10 +30,10 @@ namespace Fragments.UI
         [Header("Edge Material")]
         public Material pageEdge;
 
-        [Header("Cover Material (base — gets tinted at runtime)")]
+        [Header("Cover Material (base  gets tinted at runtime)")]
         public Material coverBaseMaterial;
 
-        [Header("Debug Display (temporary — remove later)")]
+        [Header("Debug Display (temporary  remove later)")]
         public TMP_Text journalNameText;
         public Image coverColorPreview;
 
@@ -49,7 +50,7 @@ namespace Fragments.UI
         {
             if (string.IsNullOrEmpty(JournalSession.CurrentId))
             {
-                Debug.LogError("[Fragments] No journal ID set — returning to library.");
+                Debug.LogError("[Fragments] No journal ID set  returning to library.");
                 sceneNavigator.LoadLibrary();
                 return;
             }
@@ -58,7 +59,7 @@ namespace Fragments.UI
 
             if (_data == null)
             {
-                Debug.LogError("[Fragments] Journal not found — returning to library.");
+                Debug.LogError("[Fragments] Journal not found  returning to library.");
                 sceneNavigator.LoadLibrary();
                 return;
             }
@@ -134,7 +135,7 @@ namespace Fragments.UI
                 return;
             }
 
-            // Set cover color — create a runtime copy so we don't modify the asset
+            // Set cover color  create a runtime copy so we don't modify the asset
             if (coverBaseMaterial != null &&
                 ColorUtility.TryParseHtmlString(_data.coverColorHex, out Color coverCol))
             {
@@ -157,7 +158,7 @@ namespace Fragments.UI
             if (pageEdge != null)
                 builder.edgeMaterial = pageEdge;
 
-            // Rebuild at runtime — this regenerates all meshes and initializes
+            // Rebuild at runtime  this regenerates all meshes and initializes
             // the runtime state (curl data, physics joints) that doesn't survive
             // prefab serialization. The prefab still controls positioning and
             // dimensions; we just refresh the internals.
@@ -201,6 +202,22 @@ namespace Fragments.UI
             book.settings.sheetCount = _data.sheetCount;
             book.Build();
             book.RestoreSpread(spread);
+        }
+
+        public void ClearVisiblePage()
+        {
+            if (book == null || book.Pages == null) return;
+
+            if (book.TurnedCount > 0 && book.TurnedCount - 1 < book.Sheets.Count)
+            {
+                var left = book.Sheets[book.TurnedCount - 1];
+                if (left.BackPage != null) { left.BackPage.Clear(); PageRenderer.Render(left.BackPage); }
+            }
+            if (book.TurnedCount < book.Sheets.Count)
+            {
+                var right = book.Sheets[book.TurnedCount];
+                if (right.FrontPage != null) { right.FrontPage.Clear(); PageRenderer.Render(right.FrontPage); }
+            }
         }
 
         public void GoBack()
