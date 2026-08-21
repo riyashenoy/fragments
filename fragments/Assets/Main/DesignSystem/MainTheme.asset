@@ -1,0 +1,138 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fa681f4ac9a51b4f860cec41a89fb0b, type: 3}
+  m_Name: MainTheme
+  m_EditorClassIdentifier: Assembly-CSharp::Fragments.DesignSystem.FragmentsTheme
+  passthroughDim: {r: 0, g: 0, b: 0, a: 0.72}
+  panelSurface: {r: 1, g: 1, b: 1, a: 1}
+  panelDark: {r: 0.08, g: 0.07, b: 0.06, a: 0.94}
+  textOnDark: {r: 1, g: 1, b: 1, a: 1}
+  textOnDarkMuted: {r: 1, g: 1, b: 1, a: 0.6}
+  textOnLight: {r: 0.11, g: 0.1, b: 0.09, a: 1}
+  textOnLightMuted: {r: 0.11, g: 0.1, b: 0.09, a: 0.55}
+  accentWarm: {r: 0.96, g: 0.85, b: 0.34, a: 1}
+  accentSoft: {r: 0.96, g: 0.85, b: 0.34, a: 0.15}
+  outlineHand: {r: 0.75, g: 0.72, b: 0.68, a: 0.7}
+  danger: {r: 0.85, g: 0.35, b: 0.29, a: 1}
+  shadowSoft: {r: 0, g: 0, b: 0, a: 0.28}
+  shadowDistance: 6
+  spacingXs: 6
+  spacingSm: 12
+  spacingMd: 20
+  spacingLg: 32
+  spacingXl: 48
+  spacingXxl: 72
+  radiusSm: 8
+  radiusMd: 16
+  radiusLg: 24
+  radiusPill: 999
+  scriptFont: {fileID: 11400000, guid: 4873da72ab415de4babf1d5c310b3163, type: 2}
+  bodyFont: {fileID: 11400000, guid: 35643e5ce65be384aaad852178350d47, type: 2}
+  bodyFontMedium: {fileID: 11400000, guid: 35643e5ce65be384aaad852178350d47, type: 2}
+  bodyFontSemibold: {fileID: 11400000, guid: 35643e5ce65be384aaad852178350d47, type: 2}
+  bodyFontBold: {fileID: 11400000, guid: 35643e5ce65be384aaad852178350d47, type: 2}
+  sizeDisplay: 96
+  sizeH1: 64
+  sizeH2: 40
+  sizeH3: 28
+  sizeBodyLg: 22
+  sizeBody: 18
+  sizeSmall: 14
+  sizeCaption: 12
+  hoverScale: 1.06
+  pressScale: 0.94
+  durFast: 0.15
+  durMed: 0.28
+  durSlow: 0.45
+  easeOut:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  easeInOut:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  easeSpring:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6
+      value: 1.08
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  hoverGlowRadius: 8
+  hoverGlow: {r: 1, g: 0.95, b: 0.75, a: 0.35}
