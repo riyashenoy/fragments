@@ -72,9 +72,49 @@ namespace Fragments.Book
                 case "photo":
                     DrawPhoto(px, w, h, cx, cy, 92f * s, 108f * s, col);
                     break;
+                case "stroke":
+                    DrawStroke(px, w, h, e, col, s);
+                    break;
                 default:
                     DrawSticker(px, w, h, cx, cy, 28f * s, col);
                     break;
+            }
+        }
+
+        static void DrawStroke(Color32[] px, int w, int h, PageElement e, Color32 col, float scale)
+        {
+            if (e.points == null || e.points.Count == 0) return;
+
+            float baseThick = Mathf.Max(0.5f, e.thickness) * scale;
+
+            if (e.points.Count == 1)
+            {
+                var p = e.points[0];
+                float r = baseThick * Mathf.Clamp01(p.pressure);
+                FillCircle(px, w, h, p.u * w, p.v * h, r, col);
+                return;
+            }
+
+            for (int i = 0; i < e.points.Count - 1; i++)
+            {
+                var a = e.points[i];
+                var b = e.points[i + 1];
+                float x0 = a.u * w, y0 = a.v * h;
+                float x1 = b.u * w, y1 = b.v * h;
+                float dist = Mathf.Sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
+                int steps = Mathf.Clamp(Mathf.CeilToInt(dist * 0.5f), 8, 15);
+                float pa = Mathf.Clamp01(a.pressure);
+                float pb = Mathf.Clamp01(b.pressure);
+
+                for (int s = 0; s <= steps; s++)
+                {
+                    float t = s / (float)steps;
+                    float x = Mathf.Lerp(x0, x1, t);
+                    float y = Mathf.Lerp(y0, y1, t);
+                    float pressure = Mathf.Lerp(pa, pb, t);
+                    float r = baseThick * pressure;
+                    FillCircle(px, w, h, x, y, r, col);
+                }
             }
         }
 
