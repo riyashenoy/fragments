@@ -21,5 +21,8 @@ namespace Fragments.Book
         // For text
         public string text = "";
         public float fontSize = 20f;
+
+        // For audio clips
+        public string audioClipFilename = "";
     }
 }

@@ -28,6 +28,10 @@ namespace Fragments.Book
         [Header("Text Input")]
         public Fragments.UI.TextInputController textInputController;
 
+        [Header("Audio Placement")]
+        public AudioClip pendingAudioClip;
+        public string currentJournalId; // set by JournalingSceneManager
+
         BookSheet _held;
         int _heldDir = 1;
         Vector2 pressScreenPos;
@@ -288,6 +292,32 @@ namespace Fragments.Book
             if (book == null || book.Busy) return;
             if (!TryGetPageHit(screenPos, out _, out JournalPage page, out float u, out float v, out _))
                 return;
+
+            if (activeStampType == "audio")
+            {
+                if (pendingAudioClip == null) return;
+                if (string.IsNullOrEmpty(currentJournalId))
+                    currentJournalId = Fragments.Data.JournalSession.CurrentId;
+                if (string.IsNullOrEmpty(currentJournalId))
+                {
+                    Debug.LogWarning("[Fragments] No journal id set — cannot save audio clip.");
+                    return;
+                }
+
+                var filename = Fragments.Audio.AudioClipStore.SaveClip(currentJournalId, pendingAudioClip);
+                var audioEl = new PageElement
+                {
+                    type = "audio",
+                    u = u, v = v,
+                    audioClipFilename = filename,
+                    colorHex = "#5A7FB8",
+                    layer = page.elements.Count
+                };
+                page.Add(audioEl);
+                PageRenderer.Render(page);
+                pendingAudioClip = null;
+                return;
+            }
 
             var el = new PageElement
             {

@@ -82,10 +82,25 @@ namespace Fragments.Book
                 case "text":
                     DrawText(px, w, h, e, col, s);
                     break;
+                case "audio":
+                    DrawAudioIcon(px, w, h, cx, cy, 20f * s,
+                        Parse(string.IsNullOrEmpty(e.colorHex) ? "#5A7FB8" : e.colorHex,
+                            new Color32(0x5A, 0x7F, 0xB8, 255)));
+                    break;
                 default:
                     DrawSticker(px, w, h, cx, cy, 28f * s, col);
                     break;
             }
+        }
+
+        static void DrawAudioIcon(Color32[] px, int w, int h, float cx, float cy, float r, Color32 col)
+        {
+            // Soft disc + smaller inner disc as a simple speaker/record placeholder
+            FillCircle(px, w, h, cx, cy, r, col);
+            var inner = new Color32(255, 255, 255, 180);
+            FillCircle(px, w, h, cx, cy, r * 0.35f, inner);
+            // Tiny "play" triangle approximation: three dots
+            FillCircle(px, w, h, cx + r * 0.55f, cy, r * 0.12f, inner);
         }
 
         static void DrawText(Color32[] px, int w, int h, PageElement e, Color32 col, float scale)

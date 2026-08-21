@@ -43,6 +43,9 @@ namespace Fragments.UI
         [Header("Book")]
         public Fragments.Book.Book book;
 
+        [Header("Book Input")]
+        public BookDragInput bookInput;
+
         JournalData _data;
         Journal _journal;
 
@@ -69,7 +72,9 @@ namespace Fragments.UI
             _data.lastOpenedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             JournalStore.Save(_data);
 
-            SpawnAndStyleBook();
+            // Legacy Journal3D spawn ù only if no Fragments.Book is wired in the scene
+            if (book == null)
+                SpawnAndStyleBook();
             UpdateDebugDisplay();
 
             Debug.Log("[Fragments] Loaded: " + _data.journalName +
@@ -80,6 +85,11 @@ namespace Fragments.UI
         void ApplyDataToBook()
         {
             if (book == null || book.settings == null) return;
+
+            if (bookInput == null)
+                bookInput = book.GetComponent<BookDragInput>();
+            if (bookInput != null)
+                bookInput.currentJournalId = _data.id;
 
             // Runtime copy so we don't dirty the shared BookSettings asset
             book.settings = Instantiate(book.settings);
@@ -140,7 +150,7 @@ namespace Fragments.UI
         {
             if (journalPrefab == null)
             {
-                Debug.LogError("[Fragments] No journal prefab assigned!");
+                Debug.LogWarning("[Fragments] No journal prefab assigned ó skipping legacy spawn.");
                 return;
             }
 
@@ -159,7 +169,9 @@ namespace Fragments.UI
 
             if (builder == null)
             {
-                Debug.LogError("[Fragments] Journal prefab has no JournalBuilder component!");
+                // Prefab is the Fragments.Book journal ó no JournalBuilder needed.
+                Destroy(bookObj);
+                Debug.LogWarning("[Fragments] journalPrefab has no JournalBuilder; using scene Book instead.");
                 return;
             }
 
