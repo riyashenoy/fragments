@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -19,12 +20,25 @@ namespace Fragments.UI
         [Tooltip("If null, the script reuses the existing slot and just swaps text/color.")]
         public GameObject filledSlotPrefab;
 
+        [Header("Error Message")]
+        [Tooltip("Assign a TMP text in the Library scene. It flashes when you try to create in an occupied / full slot.")]
+        public TMP_Text errorText;
+        [Tooltip("How long the error stays visible before fully fading out.")]
+        public float errorDuration = 3f;
+
         Color[] _emptySlotColors;
         GameObject[] _filledInstances;
+        Coroutine _errorRoutine;
+        Color _errorBaseColor;
 
         void Start()
         {
             CacheEmptySlotColors();
+            if (errorText != null)
+            {
+                _errorBaseColor = errorText.color;
+                errorText.gameObject.SetActive(false);
+            }
             PopulateSlots();
         }
 
@@ -144,7 +158,8 @@ namespace Fragments.UI
             Button btn = slot.GetComponent<Button>();
             if (btn != null)
             {
-                btn.onClick.RemoveAllListeners();
+                // Wipe persistent (inspector) listeners too — RemoveAllListeners only clears runtime ones.
+                btn.onClick = new Button.ButtonClickedEvent();
                 string id = journal.id;
                 btn.onClick.AddListener(() => sceneNavigator.OpenExistingJournal(id));
             }
@@ -170,9 +185,67 @@ namespace Fragments.UI
             Button btn = slot.GetComponent<Button>();
             if (btn != null)
             {
-                btn.onClick.RemoveAllListeners();
-                btn.onClick.AddListener(() => sceneNavigator.CreateNewJournal());
+                btn.onClick = new Button.ButtonClickedEvent();
+                int slotIndex = index;
+                btn.onClick.AddListener(() => TryCreateInSlot(slotIndex));
             }
+        }
+
+        void TryCreateInSlot(int slotIndex)
+        {
+            List<JournalData> journals = JournalStore.LoadAll();
+
+            // Occupied slot → open that journal in the Journaling scene (never Create Journal).
+            if (slotIndex < journals.Count)
+            {
+                sceneNavigator.OpenExistingJournal(journals[slotIndex].id);
+                return;
+            }
+
+            if (journals.Count >= slots.Length)
+            {
+                ShowError();
+                return;
+            }
+
+            sceneNavigator.CreateNewJournal();
+        }
+
+        public void ShowError()
+        {
+            if (errorText == null) return;
+
+            if (_errorRoutine != null)
+                StopCoroutine(_errorRoutine);
+            _errorRoutine = StartCoroutine(FlashErrorRoutine());
+        }
+
+        IEnumerator FlashErrorRoutine()
+        {
+            errorText.gameObject.SetActive(true);
+            Color c = _errorBaseColor;
+            c.a = 1f;
+            errorText.color = c;
+
+            // Hold fully visible for most of the duration, then fade out.
+            float hold = Mathf.Max(0f, errorDuration - 1f);
+            if (hold > 0f)
+                yield return new WaitForSeconds(hold);
+
+            float fade = Mathf.Min(1f, errorDuration);
+            float t = 0f;
+            while (t < fade)
+            {
+                t += Time.deltaTime;
+                c.a = 1f - Mathf.Clamp01(t / fade);
+                errorText.color = c;
+                yield return null;
+            }
+
+            c.a = 0f;
+            errorText.color = c;
+            errorText.gameObject.SetActive(false);
+            _errorRoutine = null;
         }
     }
 }

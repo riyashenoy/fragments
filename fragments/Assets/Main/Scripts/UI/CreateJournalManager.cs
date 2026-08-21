@@ -38,13 +38,27 @@ namespace Fragments.UI
         public Color selectedOutlineColor = new Color(0.91f, 0.71f, 0.30f);
         public Color unselectedOutlineColor = new Color(0.3f, 0.3f, 0.3f);
 
+        [Header("Error Message")]
+        [Tooltip("Assign a TMP text in the Create Journal scene. Flashes when the library is full.")]
+        public TMP_Text errorText;
+        public float errorDuration = 3f;
+        public int maxJournals = 6;
+
         string _selectedColor;
         string _selectedPattern = "plain";
         string _selectedBinding = "hardcover";
         int _sheetCount = 8;
+        Coroutine _errorRoutine;
+        Color _errorBaseColor;
 
         void Start()
         {
+            if (errorText != null)
+            {
+                _errorBaseColor = errorText.color;
+                errorText.gameObject.SetActive(false);
+            }
+
             for (int i = 0; i < colorButtons.Length; i++)
             {
                 int index = i;
@@ -136,6 +150,12 @@ namespace Fragments.UI
 
         void OnBegin()
         {
+            if (JournalStore.LoadAll().Count >= maxJournals)
+            {
+                ShowError();
+                return;
+            }
+
             string journalName = nameInput.text.Trim();
             if (string.IsNullOrEmpty(journalName))
                 journalName = "untitled journal";
@@ -158,6 +178,41 @@ namespace Fragments.UI
             JournalStore.Save(journal);
             JournalSession.CurrentId = journal.id;
             sceneNavigator.LoadJournaling();
+        }
+
+        void ShowError()
+        {
+            if (errorText == null) return;
+            if (_errorRoutine != null)
+                StopCoroutine(_errorRoutine);
+            _errorRoutine = StartCoroutine(FlashErrorRoutine());
+        }
+
+        System.Collections.IEnumerator FlashErrorRoutine()
+        {
+            errorText.gameObject.SetActive(true);
+            Color c = _errorBaseColor;
+            c.a = 1f;
+            errorText.color = c;
+
+            float hold = Mathf.Max(0f, errorDuration - 1f);
+            if (hold > 0f)
+                yield return new WaitForSeconds(hold);
+
+            float fade = Mathf.Min(1f, errorDuration);
+            float t = 0f;
+            while (t < fade)
+            {
+                t += Time.deltaTime;
+                c.a = 1f - Mathf.Clamp01(t / fade);
+                errorText.color = c;
+                yield return null;
+            }
+
+            c.a = 0f;
+            errorText.color = c;
+            errorText.gameObject.SetActive(false);
+            _errorRoutine = null;
         }
     }
 }

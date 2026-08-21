@@ -106,6 +106,34 @@ namespace Fragments.UI
 
             // Rebuild with new settings
             book.Build();
+            ApplySavedPages();
+        }
+
+        public void SaveAllPages()
+        {
+            if (book == null || _data == null) return;
+            _data.pageStates.Clear();
+            foreach (var page in book.Pages)
+            {
+                if (page.elements.Count == 0) continue;
+                var state = new PageState { pageIndex = page.index };
+                state.elements.AddRange(page.elements);
+                _data.pageStates.Add(state);
+            }
+            JournalStore.Save(_data);
+        }
+
+        void ApplySavedPages()
+        {
+            if (book == null || _data == null || _data.pageStates == null) return;
+            foreach (var state in _data.pageStates)
+            {
+                if (state.pageIndex < 0 || state.pageIndex >= book.Pages.Count) continue;
+                var page = book.Pages[state.pageIndex];
+                page.elements.Clear();
+                page.elements.AddRange(state.elements);
+                PageRenderer.Render(page);
+            }
         }
 
         void SpawnAndStyleBook()
@@ -196,11 +224,14 @@ namespace Fragments.UI
 
             int spread = book.TurnedCount;
 
+            SaveAllPages();
+
             _data.sheetCount = Mathf.Min(16, _data.sheetCount + 1);
             JournalStore.Save(_data);
 
             book.settings.sheetCount = _data.sheetCount;
             book.Build();
+            ApplySavedPages();
             book.RestoreSpread(spread);
         }
 
@@ -222,7 +253,7 @@ namespace Fragments.UI
 
         public void GoBack()
         {
-            // TODO: save journal contents before leaving (Phase 5)
+            SaveAllPages();
             sceneNavigator.LoadLibrary();
         }
     }

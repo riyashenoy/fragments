@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Fragments.Book;
 
 namespace Fragments.Data
 {
@@ -15,6 +16,14 @@ namespace Fragments.Data
         public long createdAt;
         public long lastOpenedAt;
         public List<PageData> pages = new();
+        public List<PageState> pageStates = new();
+    }
+
+    [Serializable]
+    public class PageState
+    {
+        public int pageIndex;
+        public List<PageElement> elements = new();
     }
 
     [Serializable]
