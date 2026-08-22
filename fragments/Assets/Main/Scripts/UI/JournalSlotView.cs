@@ -1,8 +1,9 @@
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using UnityEngine.Events;
 using Fragments.Data;
+using System;
+using TMPro;
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
 
 namespace Fragments.UI
@@ -44,8 +45,8 @@ namespace Fragments.UI
 
             // Deterministic tilt per journal so it doesn't change on rebuild
             int seed = data.id.GetHashCode();
-            Random.InitState(seed);
-            float tilt = Random.Range(-tiltRange, tiltRange);
+            UnityEngine.Random.InitState(seed);
+            float tilt = UnityEngine.Random.Range(-tiltRange, tiltRange);
             filledJournal.transform.localRotation = Quaternion.Euler(0f, 0f, tilt);
 
             button.onClick.RemoveAllListeners();
