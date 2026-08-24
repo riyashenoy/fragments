@@ -150,15 +150,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Found.Journal3D.JournalBuilder
   shellMaterial: {fileID: 2100000, guid: 0b448df16eee75c48b00cb94d12f229f, type: 2}
   pageMaterial: {fileID: 2100000, guid: 5f832560d58ee80409df11d5ea2d34bd, type: 2}
+  edgeMaterial: {fileID: 0}
   pageWidth: 0.16
   pageHeight: 0.22
   pageCount: 6
   coverMargin: 0.006
   coverThickness: 0.007
+  pageThickness: 0.0018
   spineWidth: 0.012
   subdivisionsX: 16
   subdivisionsZ: 6
   paperNoise: 0.0012
+  enablePageGravity: 1
+  pageHingeSpring: 2
+  pageHingeDamping: 0.8
   buildOnStart: 1
 --- !u!4 &405591644
 Transform:
